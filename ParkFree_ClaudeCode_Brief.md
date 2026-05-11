@@ -279,23 +279,28 @@ CREATE INDEX cpz_zone_id   ON cpz (borough, source_zone_id);
 
 Where a source publishes finer-than-zone detail (currently only Camden's `7hiv-3r9k`), it also lands in a `cpz_bay` table — individual marked bays with their own `restriction_type`, raw `times_of_operation`, and `LineString` geometry. The time-aware query (§6.2) uses `cpz`; `cpz_bay` is captured for a later refinement (e.g. a stretch tagged "at any time" inside an otherwise-controlled zone). And where only *unlabelled* borough-level CPZ coverage is available (currently Haringey + Tower Hamlets, from the Felt 2024 map — they have hours-bearing `cpz` rows but no per-zone geometry), it lands in `cpz_area` — polygons tagged with the borough only, used to detect "in a CPZ here" without knowing which zone. Full DDL for all four tables (`cpz`, `cpz_bay`, `cpz_area`, `red_route`) in `backend/db/schema.sql`.
 
-### 6.4 Zone unit (street segments)
+### 6.4 Zone unit (street segments) — ingested step 5 (`npm run ingest:osm`)
 
-A zone is a **LINESTRING** along contiguous OSM ways with **identical parking attributes**. Adjacent ways with the same `parking:lane:*`, `parking:condition:*`, and `parking:*:zone=*` are dissolved (`ST_LineMerge`) into one row. Geometry kept as linestring; rendered as a styled line on the client. `ST_ClosestPoint` works directly on linestrings.
+A zone is a run of **contiguous OSM ways** (`highway=residential|living_street|unclassified`) with the **same parking-attribute tuple** — `(street_name, parking_lane, parking_condition, osm_zone_tag)` — dissolved into one row. Geometry is the `ST_LineMerge` of the group (a `MultiLineString` — a fork stays multi-part); rendered as a styled line on the client, and `ST_ClosestPoint` works directly on it. The grouping is one SQL pass: `ST_ClusterDBSCAN(geom, eps=0, minpoints=1)` partitioned by the attribute tuple (so touching ways with the same attrs cluster together, disjoint same-named streets don't), then `GROUP BY` cluster and `ST_LineMerge`. The ingest does a full per-borough rebuild (DELETE then INSERT in a transaction) — Overpass `out geom;` → a GeoJSON FeatureCollection → that SQL.
 
 ```sql
 CREATE TABLE zone (
-  id              text primary key,                  -- stable hash of grouped OSM way ids
-  geom            geometry(LineString,4326),
-  street_name     text,
-  parking_lane    text,                              -- 'parallel', 'diagonal', etc., or null
-  osm_zone_tag    text,                              -- 'WSE', null
-  source_way_ids  text[],
-  last_synced_at  timestamptz not null
+  id                text primary key,                       -- '<borough>:' + md5 of the sorted OSM way ids (borough-prefixed so boundary ways don't collide cross-borough)
+  borough           text not null,                          -- 'camden' | 'waltham_forest' | 'haringey' | 'tower_hamlets'
+  geom              geometry(MultiLineString,4326) not null,
+  street_name       text,
+  parking_lane      text,                                   -- representative 'parallel' | 'diagonal' | … or null
+  parking_condition text,                                   -- representative 'free' | 'permit' | 'residents' | … or null
+  osm_zone_tag      text,                                   -- CPZ zone code from parking:*:zone=* — joins to cpz.source_zone_id for tag-join boroughs (WF)
+  source_way_ids    text[] not null,
+  last_synced_at    timestamptz not null default now()
 );
 CREATE INDEX zone_geom_gist ON zone USING gist(geom);
 CREATE INDEX zone_osm_zone  ON zone (osm_zone_tag) WHERE osm_zone_tag IS NOT NULL;
+CREATE INDEX zone_borough   ON zone (borough);
 ```
+
+(`parking_lane` / `parking_condition` are best-effort representatives — OSM's parking schema is messy and ~0%-covered in these boroughs; eligibility is driven by the CPZ data, not these. The way-class filter is deliberately conservative — residential-ish streets are where free parking lives — and can be widened later.)
 
 ### 6.5 Confidence tiers
 
@@ -315,7 +320,7 @@ A street in a `polygon`-join borough that's *outside* all that borough's `cpz_ar
 
 | Source | Cadence | Mechanism |
 |---|---|---|
-| OSM (Overpass) | Weekly | Full refetch (all committed boroughs) into `zone_staging`, atomic swap |
+| OSM (Overpass) → `zone` | Weekly | `npm run ingest:osm` — per borough: Overpass `out geom;` → FeatureCollection → one `ST_ClusterDBSCAN`/`ST_LineMerge` pass; full per-borough rebuild in a transaction |
 | Camden Socrata | Weekly (data refreshed daily upstream) | `npm run ingest:camden` — pull `vf6e-iymu` → `cpz`, `7hiv-3r9k` → `cpz_bay` |
 | Other API boroughs (per Step 0b) | Weekly | Same `socrata.ts` plumbing + per-borough module |
 | Static-JSON boroughs (Waltham Forest, Haringey, Tower Hamlets) | Manual on edit | `npm run build:static-data` (regenerate from source rows) → `npm run ingest:wf|:haringey|:tower-hamlets`; re-verify quarterly against council pages |
@@ -406,8 +411,8 @@ Over time the app becomes "places I have parked free before" — a much stronger
 | 4 | Static-JSON adapter `static.ts` + `sources/waltham-forest.ts` + `sources/haringey.ts`; `backend/static-data/{waltham-forest,haringey}.json` built by `npm run build:static-data` | **Done + ingested** — `cpz`: WF 86 (60 hrs, OSM-tag join, `geom` NULL by design) + Haringey 45 (42 hrs, `geom` NULL until step 4c). `npm test` green |
 | 4b | Tower Hamlets hours — `sources/tower-hamlets.ts` + `static-data/tower-hamlets.json` (19 zones: 16 mini-zones + 3 split-out sub-areas) built from the council parking-zones page + CPZ map PDF; hours hand-converted to OSM syntax (cross-check `towerhamlets.traffweb.app`) | **Done + ingested** — `cpz`: TH 19 (all w/ hours, `geom` NULL until step 4c). `npm test` green |
 | 4c | CPZ-area coverage for Haringey + Tower Hamlets — `sources/cpz-areas.ts` + Felt 2024 polygons → `cpz_area` (borough-level, no zone identity). New `cpz_area` table; query semantics in §6.2/§6.5 ("in a CPZ here ⇒ 0.6 verify-signage"; outside ⇒ not in a CPZ) | **Partly done + ingested** — `cpz_area`: 53 polygons (Haringey 48, TH 5 coarse). `npm test` green. **Per-zone polygons for Haringey/TH still a data gap** — Felt carries no zone codes, no automatable council source; needs FOI / web-map scrape (→ then `cpz.geom`) |
-| 5 | OSM zone ingestion — Overpass for all committed boroughs' residential ways (`*_residential.json` dumps already exist for Haringey/TH from Step 0b), `ST_LineMerge` grouping | **Next** |
-| 6 | Backend `GET /zones?bbox=&t=` — viewport-clipped GeoJSON with time-aware inclusion (§6.2); per-zone confidence incl. 0.4-tier for adapter-less areas | |
+| 5 | OSM zone ingestion — `sources/osm.ts` + `osm-transform.ts`: Overpass `out geom;` per committed borough (`highway=residential\|living_street\|unclassified`) → `ST_ClusterDBSCAN`/`ST_LineMerge` grouping → `zone` | **Done + ingested** — `zone`: 6,158 rows (Camden 1187, WF 1873, Haringey 1405, TH 1693); WF tag-join verified (1,076 zones carry `osm_zone_tag`, join to `cpz`), Camden spatial join 1164/1187 hit a `cpz` polygon, Haringey 1207/1405 hit a `cpz_area`. `npm test` 32 green. `npm run ingest:osm` |
+| 6 | Backend `GET /zones?bbox=&t=` — viewport-clipped GeoJSON with time-aware inclusion (§6.2); per-zone confidence incl. 0.4-tier for adapter-less areas | **Next** |
 | 7 | Search screen — Google Places autocomplete, mode toggle, time toggle, walk slider, bus toggle | |
 | 8 | Map + Results screen with real zones rendered, **walk mode only** — incl. per-zone "verify with signage" badge, borough-scoped warning banner + hatched tint (§4) | |
 | 9 | `ST_ClosestPoint` walk scoring + bottom-sheet ranked list (collapsed/mid/expanded) | |

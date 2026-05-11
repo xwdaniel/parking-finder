@@ -7,11 +7,11 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/ingestion/hours.test.ts src/ingestion/static.test.ts src/ingestion/socrata.test.ts src/ingestion/sources/camden-transform.test.ts src/ingestion/sources/cpz-areas.test.ts src/server.test.ts",
+    "test": "node --import tsx --test src/ingestion/hours.test.ts src/ingestion/static.test.ts src/ingestion/socrata.test.ts src/ingestion/sources/camden-transform.test.ts src/ingestion/sources/cpz-areas.test.ts src/ingestion/sources/osm-transform.test.ts src/server.test.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:reset": "tsx src/db/reset.ts",
     "db:status": "tsx src/db/status.ts",
-    "ingest:all": "npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey && npm run ingest:tower-hamlets && npm run ingest:cpz-areas",
+    "ingest:all": "npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey && npm run ingest:tower-hamlets && npm run ingest:cpz-areas && npm run ingest:osm",
     "build:static-data": "npm run build:static-data:wf && npm run build:static-data:haringey && npm run build:static-data:tower-hamlets",
     "build:static-data:wf": "tsx src/ingestion/scripts/build-wf-static.ts",
     "build:static-data:haringey": "tsx src/ingestion/scripts/build-haringey-static.ts",
@@ -22,7 +22,8 @@
     "ingest:wf": "tsx src/ingestion/sources/waltham-forest.ts",
     "ingest:haringey": "tsx src/ingestion/sources/haringey.ts",
     "ingest:tower-hamlets": "tsx src/ingestion/sources/tower-hamlets.ts",
-    "ingest:cpz-areas": "tsx src/ingestion/sources/cpz-areas.ts"
+    "ingest:cpz-areas": "tsx src/ingestion/sources/cpz-areas.ts",
+    "ingest:osm": "tsx src/ingestion/sources/osm.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

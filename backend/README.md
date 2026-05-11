@@ -26,7 +26,7 @@ The project uses a **Supabase** (or **Neon**) free-tier Postgres+PostGIS as both
 1. Create a free Supabase project → enable the **PostGIS** extension (Dashboard → Database → Extensions → search "postgis" → enable) → copy the **Session pooler** connection string (Project Settings → Database → Connection string → mode "Session", port 5432, host `aws-0-<region>.pooler.supabase.com`). Session mode (not Transaction/pgBouncer) is the right fit for a long-running server holding a small connection pool — it behaves like a real per-session connection (no prepared-statement caveats) and is IPv4 so it also works from Fly.io. Neon: create a project, `create extension postgis;`, copy the connection string.
 2. `cd backend && cp .env.example .env`, set `DATABASE_URL=…` (leave `PGSSL` unset so SSL stays on for the managed DB).
 3. `npm install && npm run db:migrate` — applies `db/schema.sql` (idempotent; no `psql` needed).
-4. `npm run build:static-data && npm run fetch:felt-cpz` then `npm run ingest:all` — populates `cpz` / `cpz_bay` / `cpz_area` (Camden API + WF/Haringey/TH static JSON + Felt area polygons). `npm run db:status` shows what's loaded.
+4. `npm run build:static-data && npm run fetch:felt-cpz` then `npm run ingest:all` — populates `cpz` / `cpz_bay` / `cpz_area` (Camden API + WF/Haringey/TH static JSON + Felt area polygons) and `zone` (OSM streets, contiguity-grouped). `npm run db:status` shows what's loaded. (`ingest:all` is ~10–12 min — mostly Camden's per-bay rows; the OSM step adds ~1–2 min.)
 5. `npm run dev` → `curl -s localhost:3000/health | jq` →
    ```json
    { "status": "ok", "time": "…", "db": { "connected": true, "postgis": "3.4.2", "serverVersion": "16.4" } }
@@ -61,8 +61,8 @@ fly logs
 | `npm run db:status` | PostGIS version + row counts per table + `cpz` breakdown by source |
 | `npm run build:static-data` | regenerate `static-data/{waltham-forest,haringey,tower-hamlets}.json` (hours) |
 | `npm run fetch:felt-cpz` | download Felt 2024 CPZ-area polygons → `static-data/*-cpz-polygons.geojson` (~7 min) |
-| `npm run ingest:all` | run every CPZ adapter (camden, wf, haringey, tower-hamlets, cpz-areas) |
-| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` / `:cpz-areas` | run one CPZ adapter (needs `DATABASE_URL`) |
+| `npm run ingest:all` | load everything: CPZ adapters (camden, wf, haringey, tower-hamlets, cpz-areas) + OSM (`zone`) |
+| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` / `:cpz-areas` / `:osm` | run one ingest step (needs `DATABASE_URL`) |
 
 ## Tests
 

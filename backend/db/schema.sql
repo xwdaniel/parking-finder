@@ -39,19 +39,24 @@ create index if not exists cpz_bay_geom_gist on cpz_bay using gist (geom);
 create index if not exists cpz_bay_zone      on cpz_bay (borough, source_zone_code);
 
 -- --- OSM street segments (brief §6.4) ------------------------------------------
--- A zone = a LINESTRING along contiguous OSM ways with identical parking attributes,
--- dissolved via ST_LineMerge during ingestion (step 5).
+-- A zone = contiguous OSM ways (highway=residential|living_street|unclassified) with
+-- identical parking attributes, dissolved via ST_LineMerge during ingestion (step 5,
+-- `npm run ingest:osm`). Grouping is done in one SQL pass with ST_ClusterDBSCAN
+-- (touching ways with the same attr tuple → one row).
 create table if not exists zone (
-  id              text primary key,                       -- stable hash of the grouped OSM way ids
-  geom            geometry(LineString, 4326) not null,
-  street_name     text,
-  parking_lane    text,                                   -- 'parallel', 'diagonal', … or null
-  osm_zone_tag    text,                                   -- 'WSE', null  (from parking:*:zone=*)
-  source_way_ids  text[] not null,
-  last_synced_at  timestamptz not null default now()
+  id                text primary key,                     -- '<borough>:' + md5 of the sorted OSM way ids in the group
+  borough           text not null,                        -- 'camden' | 'waltham_forest' | 'haringey' | 'tower_hamlets'
+  geom              geometry(MultiLineString, 4326) not null, -- ST_Multi(ST_LineMerge(...)) — a fork stays multi-part
+  street_name       text,
+  parking_lane      text,                                 -- representative 'parallel' | 'diagonal' | 'perpendicular' | … or null
+  parking_condition text,                                 -- representative 'free' | 'permit' | 'residents' | … or null
+  osm_zone_tag      text,                                 -- CPZ zone code from parking:*:zone=* (e.g. 'WSE') — joins to cpz.source_zone_id for tag-join boroughs
+  source_way_ids    text[] not null,
+  last_synced_at    timestamptz not null default now()
 );
 create index if not exists zone_geom_gist on zone using gist (geom);
 create index if not exists zone_osm_zone  on zone (osm_zone_tag) where osm_zone_tag is not null;
+create index if not exists zone_borough   on zone (borough);
 
 -- --- Borough-level CPZ coverage polygons (build-order step 4c) -----------------
 -- Unlabelled CPZ areas — polygons tagged only with the borough, no zone identity

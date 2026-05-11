@@ -20,13 +20,16 @@ src/ingestion/
     tower-hamlets.ts               # static-data/tower-hamlets.json → cpz (geom NULL); per-zone polygon join still pending  ✅ step 4b (hours only)
     cpz-areas-transform.ts         # pure: GeoJSON FeatureCollection → CpzAreaRecord[]
     cpz-areas.ts                   # static-data/<borough>-cpz-polygons.geojson → cpz_area (borough-level CPZ coverage)  ✅ step 4c
+    osm-transform.ts               # pure: Overpass ways → GeoJSON Features (with the parking-attribute tuple)
+    osm.ts                         # Overpass `out geom;` per borough → ST_ClusterDBSCAN/ST_LineMerge → zone  ✅ step 5
   scripts/
     build-wf-static.ts             # osm_spike/waltham_forest_cpz_hours.json → static-data/waltham-forest.json
     build-haringey-static.ts       # council all-cpz-hours rows → static-data/haringey.json
     build-tower-hamlets-static.ts  # council parking-zones page + CPZ map PDF (hand-converted) → static-data/tower-hamlets.json
     fetch-felt-cpz.ts              # Felt 2024 London-CPZ map → static-data/<borough>-cpz-polygons.geojson  (step 4c)
   *.test.ts  sources/*-transform.test.ts  sources/cpz-areas.test.ts   # node:test (no DB)
-  # later: osm.ts (Overpass + ST_LineMerge → zone, step 5), red-routes.ts (TLRN → red_route), sync.ts (orchestrator)
+  # later: red-routes.ts (TLRN → red_route), sync.ts (orchestrator)
+db/{migrate,reset,status}.ts       # apply schema.sql / drop+re-apply / row counts (not under ingestion/ but related)
 backend/static-data/               # *.json (hours, built by `npm run build:static-data`) + *-cpz-polygons.geojson (Felt areas, fetched by `npm run fetch:felt-cpz`) — all committed
 ```
 
@@ -48,12 +51,18 @@ backend/static-data/               # *.json (hours, built by `npm run build:stat
 - These polygons are **borough-level coverage only** — no per-zone identity. Query semantics (step 6): a street in a `polygon`-join borough that's inside a `cpz_area` polygon ⇒ confidence 0.6, "verify with signage" (which zone's hours apply is unknown — but we *do* have all that borough's zone hours in `cpz`, for UI context); outside all of them ⇒ not in a CPZ.
 - **Still pending**: per-zone polygons for Haringey / Tower Hamlets — would attach a specific `cpz` row's hours to a street via `cpz.geom`. No automatable source found (Felt has no zone codes; council web maps have no API) — FOI or a manual web-map scrape.
 
+## OSM zone ingestion (step 5) — DONE
+
+`npm run ingest:osm` — per committed borough: Overpass fetch of `highway=residential|living_street|unclassified` ways with geometry → a GeoJSON FeatureCollection (one Feature per way, carrying `(street_name, parking_lane, parking_condition, osm_zone_tag)`) → one SQL pass that `ST_ClusterDBSCAN`s touching ways within each attribute partition (eps 0 ⇒ "must touch") and dissolves each cluster with `ST_LineMerge` → one `zone` row (`id` = md5 of the sorted way ids; `geom` = MultiLineString; `source_way_ids` = the cluster). Full per-borough rebuild (`DELETE FROM zone WHERE borough = $1` then INSERT, in a transaction). WF zones get `osm_zone_tag` populated — that's what the query-time join `zone.osm_zone_tag = cpz.source_zone_id` uses to attach WF CPZ hours.
+
 ```bash
-# 1. point DATABASE_URL at a PostGIS DB and apply the schema
-psql "$DATABASE_URL" -f db/schema.sql
-# 2. (re)build/fetch the static data, then run the adapters
-npm run build:static-data && npm run fetch:felt-cpz   # fetch is ~7 min, 1300 polite requests
-npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey && npm run ingest:tower-hamlets && npm run ingest:cpz-areas
+# 0. point DATABASE_URL at a PostGIS DB and migrate
+npm run db:migrate                                        # applies db/schema.sql (idempotent; db:reset to drop + re-apply)
+# 1. (re)build/fetch the static data
+npm run build:static-data && npm run fetch:felt-cpz       # fetch:felt-cpz is ~7 min, ~1300 polite requests
+# 2. load everything (CPZ adapters + OSM) — or run a single ingest:<x>
+npm run ingest:all                                        # camden, wf, haringey, tower-hamlets, cpz-areas, osm
+npm run db:status
 # prod: npm run build && node dist/ingestion/sources/camden.js  (etc.)
 ```
 
