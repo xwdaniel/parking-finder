@@ -32,7 +32,7 @@ create table if not exists cpz_bay (
   road_name          text,
   restriction_type   text,                                    -- 'paid-for' | 'permit holders' | 'shared use' | 'no waiting' | …
   times_of_operation text,                                    -- RAW council string, e.g. 'mon-fri 08:30-18:30, sat 09:30-13:30' or 'at any time'
-  geom               geometry(MultiLineString, 4326),
+  geom               geometry(Geometry, 4326),                -- mixed: mostly LineString bays, some Polygon (shared-use) areas — stored as published
   last_synced_at     timestamptz not null default now()
 );
 create index if not exists cpz_bay_geom_gist on cpz_bay using gist (geom);

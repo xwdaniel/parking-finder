@@ -36,7 +36,7 @@ async function writeBays(records: CpzBayRecord[]): Promise<void> {
       await client.query(
         `insert into cpz_bay (id, source, borough, source_zone_code, road_name, restriction_type, times_of_operation, geom, last_synced_at)
          values ($1, $2, $3, $4, $5, $6, $7,
-           case when $8::text is null then null else st_multi(st_setsrid(st_geomfromgeojson($8), 4326)) end,
+           case when $8::text is null then null else st_makevalid(st_setsrid(st_geomfromgeojson($8), 4326)) end,
            now())`,
         [b.id, b.source, b.borough, b.sourceZoneCode, b.roadName, b.restrictionType, b.timesOfOperation, b.geomGeoJson],
       );
