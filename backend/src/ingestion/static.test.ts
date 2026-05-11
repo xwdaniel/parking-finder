@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseStaticDataFile, staticZonesToCpzRecords, type StaticDataFile } from './static';
+import { parseStaticDataFile, staticZonesToCpzRecords, loadStaticDataFile, type StaticDataFile } from './static';
 
 const VALID: unknown = {
   borough: 'waltham_forest',
@@ -64,3 +64,25 @@ test('staticZonesToCpzRecords — one cpz row per zone, slugged id, null geometr
   assert.equal(wxsw.sourceZoneId, 'WXS(w)'); // join key kept verbatim
   assert.equal(wxsw.hours, null);
 });
+
+// Regression guard: the committed static-data files (built by `npm run build:static-data`)
+// must parse and look sane. Catches a build script emitting garbage.
+const COMMITTED_FILES = ['waltham-forest.json', 'haringey.json', 'tower-hamlets.json'] as const;
+const DAY_TOKEN_RE = /\b(Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/;
+const TIME_RANGE_RE = /\d{2}:\d{2}\s*-\s*\d{2}:\d{2}/;
+
+for (const fileName of COMMITTED_FILES) {
+  test(`static-data/${fileName} is valid and every catalogued zone has plausible hours`, () => {
+    const file = loadStaticDataFile(fileName); // throws if structurally invalid
+    assert.ok(file.zones.length > 0, 'expected at least one zone');
+    assert.ok(file.join === 'osm_zone_tag' || file.join === 'polygon');
+    for (const z of file.zones) {
+      if (z.hours == null) continue;
+      assert.match(z.hours, DAY_TOKEN_RE, `${fileName} ${z.code}: hours missing a day token`);
+      assert.match(z.hours, TIME_RANGE_RE, `${fileName} ${z.code}: hours missing a HH:MM-HH:MM range`);
+    }
+    // ids are unique once slugged → cpz primary key holds
+    const recs = staticZonesToCpzRecords(file);
+    assert.equal(new Set(recs.map((r) => r.id)).size, recs.length, `${fileName}: slugged ids collide`);
+  });
+}

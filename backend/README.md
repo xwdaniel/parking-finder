@@ -65,8 +65,8 @@ fly logs
 | `npm start` | `node dist/server.js` (what the Docker image runs) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | `node --test` (built-in runner via `tsx`) — no DB needed |
-| `npm run build:static-data` | regenerate `static-data/waltham-forest.json` + `haringey.json` |
-| `npm run ingest:camden` / `:wf` / `:haringey` | run a CPZ adapter (needs `DATABASE_URL`) |
+| `npm run build:static-data` | regenerate `static-data/{waltham-forest,haringey,tower-hamlets}.json` |
+| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` | run a CPZ adapter (needs `DATABASE_URL`) |
 
 ## Tests
 

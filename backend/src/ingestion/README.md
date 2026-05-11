@@ -17,10 +17,11 @@ src/ingestion/
     camden.ts                      # Camden adapter: fetch + transform + write to cpz / cpz_bay               ✅ step 3
     waltham-forest.ts              # static-data/waltham-forest.json → cpz; streets join via OSM parking:*:zone=*  ✅ step 4
     haringey.ts                    # static-data/haringey.json → cpz (geom NULL); polygon join added in step 4c   ✅ step 4 (hours only)
-    tower-hamlets.ts               # static-data/tower-hamlets.json → cpz; spatial join — step 4b (hours) + 4c (polygons)
+    tower-hamlets.ts               # static-data/tower-hamlets.json → cpz (geom NULL); polygon join in step 4c    ✅ step 4b (hours only)
   scripts/
     build-wf-static.ts             # osm_spike/waltham_forest_cpz_hours.json → static-data/waltham-forest.json
     build-haringey-static.ts       # council all-cpz-hours rows → static-data/haringey.json
+    build-tower-hamlets-static.ts  # council parking-zones page + CPZ map PDF (hand-converted) → static-data/tower-hamlets.json
   hours.test.ts  static.test.ts  socrata.test.ts  sources/camden-transform.test.ts   # node:test (no DB)
   # later: osm.ts (Overpass + ST_LineMerge → zone, step 5), red-routes.ts (TLRN → red_route), sync.ts (orchestrator)
 backend/static-data/               # waltham-forest.json, haringey.json (committed; built by `npm run build:static-data`)
@@ -32,19 +33,20 @@ backend/static-data/               # waltham-forest.json, haringey.json (committ
 - `7hiv-3r9k` (per-bay restriction + LineString geometry) → `cpz_bay` (raw `times_of_operation` kept; normalised on consumption — per-bay refinement of the time-aware query is a later enhancement).
 - `source_type` / `source` = `camden_socrata`. Idempotent: transactional delete-then-insert scoped to the source.
 
-## Static-JSON adapters (step 4) — Waltham Forest DONE, Haringey hours DONE
+## Static-JSON adapters (steps 4 + 4b) — DONE (hours; polygons for the polygon-join boroughs are step 4c)
 
 - Canonical shape + validation in `static.ts`; data files in `backend/static-data/` (see that dir's README), rebuilt with `npm run build:static-data`.
 - **Waltham Forest** — `source_type='waltham_forest_static'`, 86 zones (60 with hours), `geom` NULL; streets join at query time via OSM tags (`zone.osm_zone_tag = cpz.source_zone_id`). Run: `npm run ingest:wf`.
-- **Haringey** — `source_type='haringey_static'`, 45 zones (42 with hours), `geom` NULL. **Inert until step 4c**: no OSM zone tags and no polygons yet, so these rows match no street; step 4c sources polygons and `UPDATE cpz SET geom = …`. Run: `npm run ingest:haringey`.
-- **Tower Hamlets** — step 4b builds `static-data/tower-hamlets.json` (scrape Traffic Orders + prose); step 4c adds polygons.
+- **Haringey** — `source_type='haringey_static'`, 45 zones (42 with hours), `geom` NULL. **Inert until step 4c** (no OSM zone tags, no polygons yet → matches no street). Run: `npm run ingest:haringey`.
+- **Tower Hamlets** — `source_type='tower_hamlets_static'`, 19 zones (all with hours; 16 mini-zones + 3 split-out sub-areas), `geom` NULL. **Inert until step 4c**, same as Haringey. Run: `npm run ingest:tower-hamlets`.
+- **Step 4c** then sources polygons for the `polygon`-join boroughs (Haringey, Tower Hamlets) and `UPDATE cpz SET geom = …`, after which their rows match streets via spatial intersection.
 
 ```bash
 # 1. point DATABASE_URL at a PostGIS DB and apply the schema
 psql "$DATABASE_URL" -f db/schema.sql
 # 2. (re)build the static-data files, then run the adapters
 npm run build:static-data
-npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey
+npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey && npm run ingest:tower-hamlets
 # prod: npm run build && node dist/ingestion/sources/camden.js  (etc.)
 ```
 

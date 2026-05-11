@@ -1,0 +1,143 @@
+{
+  "borough": "tower_hamlets",
+  "displayBorough": "London Borough of Tower Hamlets",
+  "join": "polygon",
+  "sourceType": "tower_hamlets_static",
+  "generatedAt": "2026-05-11",
+  "source": "Tower Hamlets council parking-zones page + Controlled-Parking-Zones-Within-Tower-Hamlets.pdf (fetched 2026-05-11). The 16 mini-zones (A1–A6, B1–B4, C1–C4, D1–D2) were recently consolidated under 4 parent zones; this list over-splits three named sub-areas (A6 Brick Lane West, B3 Chrisp Street, C2 Trinity Square) into their own codes because their hours differ from the parent zone. Hours hand-converted from council prose to OSM opening_hours syntax — cross-check against towerhamlets.traffweb.app (Traffic Management Orders, authoritative). Hours only — no machine-readable polygons; the street→zone join needs polygons sourced separately (build-order step 4c). Free outside CPZ hours and on bank holidays.",
+  "zones": [
+    {
+      "code": "A1",
+      "name": "Zone A1 (Bethnal Green)",
+      "hours": "Mo-Fr 08:30-17:30; Su 08:30-14:00",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "A2",
+      "name": "Zone A2 (Bethnal Green)",
+      "hours": "Mo-Fr 08:30-17:30; Su 08:30-14:00",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "A3",
+      "name": "Zone A3 (Bethnal Green)",
+      "hours": "Mo-Sa 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "A4",
+      "name": "Zone A4 (Bethnal Green)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "A5",
+      "name": "Zone A5 (Bethnal Green)",
+      "hours": "Mo 00:00-19:00; Tu-We 08:30-19:00; Th 08:30-24:00; Fr-Su 00:00-24:00",
+      "note": "Unusual schedule — effectively restricted ~Thu 08:30 through Mon 19:00, plus Tue/Wed daytime. Verify against towerhamlets.traffweb.app.",
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "A6",
+      "name": "Zone A6 (Bethnal Green)",
+      "hours": "Mo-Fr 08:30-19:00; Su 08:30-14:00",
+      "note": "The resident-only bays west of Brick Lane operate Mo-Su 08:30-22:00 — see \"A6 Brick Lane West\".",
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "A6 Brick Lane West",
+      "name": "Zone A6 — Brick Lane (west) resident bays",
+      "hours": "Mo-Su 08:30-22:00",
+      "note": "Resident permit holders only, west of Brick Lane. The Brick Lane / Sclater Street Sunday market may bring separate bay suspensions — verify on the ground.",
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "B1",
+      "name": "Zone B1 (Bow / Poplar)",
+      "hours": "Mo-Sa 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "B2",
+      "name": "Zone B2 (Bow / Poplar)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "B3",
+      "name": "Zone B3 (Bow / Poplar)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": "The Chrisp Street area within B3 operates Mo-Sa 08:30-17:30 — see \"B3 Chrisp Street\".",
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "B3 Chrisp Street",
+      "name": "Zone B3 — Chrisp Street",
+      "hours": "Mo-Sa 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "B4",
+      "name": "Zone B4 (Bow / Poplar)",
+      "hours": "Mo-Sa 08:30-19:30",
+      "note": "Plus event-day Sundays 08:30-19:30 on London Stadium fixture days.",
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "C1",
+      "name": "Zone C1 (Stepney / Wapping)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "C2",
+      "name": "Zone C2 (Stepney / Wapping)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": "The Trinity Square area within C2 operates Mo-Sa 08:30-17:30 + Su 08:30-14:00 — see \"C2 Trinity Square\".",
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "C2 Trinity Square",
+      "name": "Zone C2 — Trinity Square",
+      "hours": "Mo-Sa 08:30-17:30; Su 08:30-14:00",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "C3",
+      "name": "Zone C3 (Stepney / Wapping)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "C4",
+      "name": "Zone C4 (Stepney / Wapping)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "D1",
+      "name": "Zone D1 (Isle of Dogs)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    },
+    {
+      "code": "D2",
+      "name": "Zone D2 (Isle of Dogs)",
+      "hours": "Mo-Fr 08:30-17:30",
+      "note": null,
+      "provenance": "towerhamlets council parking-zones page + CPZ map PDF"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ CPZ feed (cf. Camden, which has a Socrata API). Built by scripts under
 |---|---|---|---|---|
 | `waltham-forest.json` | `osm_spike/waltham_forest_cpz_hours.json` (Step 0 PDF/OCR pipeline) — `build-wf-static.ts` | `osm_zone_tag` | 86 (60 with hours) | streets link via OSM `parking:*:zone=*` tags; the 26 null-hour zones resolve incrementally via the personal-log `verified_hours` flow (brief §7) |
 | `haringey.json` | `haringey.gov.uk/parking/cpzs/all-cpz-hours` (raw rows in `build-haringey-static.ts`) | `polygon` | 45 (42 with hours) | **hours only** — no machine-readable polygons; the street→zone join needs polygons sourced separately (build-order step 4c) before these rows match anything; 3 event-only zones have null hours |
+| `tower-hamlets.json` | council parking-zones page + CPZ map PDF (hand-converted rows in `build-tower-hamlets-static.ts`) | `polygon` | 19 (all with hours) | **hours only** — same as Haringey, polygons in step 4c. 16 mini-zones (A1–A6, B1–B4, C1–C4, D1–D2) + 3 split-out sub-areas (A6 Brick Lane West, B3 Chrisp Street, C2 Trinity Square); cross-check against `towerhamlets.traffweb.app` |
 
 Shape (validated by `parseStaticDataFile` in `src/ingestion/static.ts`):
 
@@ -27,5 +28,6 @@ Shape (validated by `parseStaticDataFile` in `src/ingestion/static.ts`):
 ```
 
 `hours` is OSM `opening_hours` syntax for the *restricted* window (null = uncatalogued).
-The adapter (`sources/<borough>.ts`) loads the file and writes `cpz` rows with `geom = NULL`;
-Tower Hamlets gets its own file once its hours are scraped (build-order step 4b).
+The adapter (`sources/<borough>.ts`) loads the file and writes `cpz` rows with `geom = NULL`.
+Build-order step 4c sources polygons for the `polygon`-join boroughs and `UPDATE cpz SET geom = …`,
+after which those rows start matching streets via spatial intersection.
