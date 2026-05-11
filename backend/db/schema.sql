@@ -53,6 +53,24 @@ create table if not exists zone (
 create index if not exists zone_geom_gist on zone using gist (geom);
 create index if not exists zone_osm_zone  on zone (osm_zone_tag) where osm_zone_tag is not null;
 
+-- --- Borough-level CPZ coverage polygons (build-order step 4c) -----------------
+-- Unlabelled CPZ areas — polygons tagged only with the borough, no zone identity
+-- (the Healthy Streets Scorecard / Felt "London CPZ by borough" map). Lets the
+-- query distinguish "this street is in *a* CPZ in this borough" (which zone's hours
+-- apply is unknown ⇒ confidence 0.6, "verify with signage") from "not in any CPZ
+-- here" (eligible). Per-zone polygons — which would attach a specific `cpz` row's
+-- hours to a street — remain a data gap for Haringey / Tower Hamlets (FOI / council
+-- web-map scrape); when acquired they go in `cpz.geom`.
+create table if not exists cpz_area (
+  id              text primary key,                    -- 'felt_2024:haringey:0'
+  borough         text not null,
+  source_type     text not null,                       -- 'felt_2024'
+  geom            geometry(MultiPolygon, 4326) not null,
+  last_synced_at  timestamptz not null default now()
+);
+create index if not exists cpz_area_geom_gist on cpz_area using gist (geom);
+create index if not exists cpz_area_borough    on cpz_area (borough);
+
 -- --- TfL Red Routes (brief §6.1) ----------------------------------------------
 -- Always-restricted roads (the TLRN). Refreshed manually, quarterly.
 create table if not exists red_route (

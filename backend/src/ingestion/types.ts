@@ -13,6 +13,15 @@ export interface CpzRecord {
   sourceType: string; // 'camden_socrata' | 'waltham_forest_static' | …
 }
 
+/** A borough-level CPZ coverage polygon (unlabelled — no zone identity). See `cpz_area`. */
+export interface CpzAreaRecord {
+  id: string; // e.g. 'felt_2024:haringey:0'
+  borough: string;
+  sourceType: string; // 'felt_2024'
+  /** Stringified GeoJSON Polygon or MultiPolygon. */
+  geomGeoJson: string;
+}
+
 export interface CpzBayRecord {
   id: string; // e.g. 'camden:46133904'
   source: string; // 'camden_socrata'

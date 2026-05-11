@@ -16,15 +16,18 @@ src/ingestion/
     camden-transform.ts            # pure transforms for Camden's vf6e-iymu / 7hiv-3r9k rows                  ✅ step 3
     camden.ts                      # Camden adapter: fetch + transform + write to cpz / cpz_bay               ✅ step 3
     waltham-forest.ts              # static-data/waltham-forest.json → cpz; streets join via OSM parking:*:zone=*  ✅ step 4
-    haringey.ts                    # static-data/haringey.json → cpz (geom NULL); polygon join added in step 4c   ✅ step 4 (hours only)
-    tower-hamlets.ts               # static-data/tower-hamlets.json → cpz (geom NULL); polygon join in step 4c    ✅ step 4b (hours only)
+    haringey.ts                    # static-data/haringey.json → cpz (geom NULL); per-zone polygon join still pending  ✅ step 4 (hours only)
+    tower-hamlets.ts               # static-data/tower-hamlets.json → cpz (geom NULL); per-zone polygon join still pending  ✅ step 4b (hours only)
+    cpz-areas-transform.ts         # pure: GeoJSON FeatureCollection → CpzAreaRecord[]
+    cpz-areas.ts                   # static-data/<borough>-cpz-polygons.geojson → cpz_area (borough-level CPZ coverage)  ✅ step 4c
   scripts/
     build-wf-static.ts             # osm_spike/waltham_forest_cpz_hours.json → static-data/waltham-forest.json
     build-haringey-static.ts       # council all-cpz-hours rows → static-data/haringey.json
     build-tower-hamlets-static.ts  # council parking-zones page + CPZ map PDF (hand-converted) → static-data/tower-hamlets.json
-  hours.test.ts  static.test.ts  socrata.test.ts  sources/camden-transform.test.ts   # node:test (no DB)
+    fetch-felt-cpz.ts              # Felt 2024 London-CPZ map → static-data/<borough>-cpz-polygons.geojson  (step 4c)
+  *.test.ts  sources/*-transform.test.ts  sources/cpz-areas.test.ts   # node:test (no DB)
   # later: osm.ts (Overpass + ST_LineMerge → zone, step 5), red-routes.ts (TLRN → red_route), sync.ts (orchestrator)
-backend/static-data/               # waltham-forest.json, haringey.json (committed; built by `npm run build:static-data`)
+backend/static-data/               # *.json (hours, built by `npm run build:static-data`) + *-cpz-polygons.geojson (Felt areas, fetched by `npm run fetch:felt-cpz`) — all committed
 ```
 
 ## Camden adapter (step 3) — DONE
@@ -39,14 +42,18 @@ backend/static-data/               # waltham-forest.json, haringey.json (committ
 - **Waltham Forest** — `source_type='waltham_forest_static'`, 86 zones (60 with hours), `geom` NULL; streets join at query time via OSM tags (`zone.osm_zone_tag = cpz.source_zone_id`). Run: `npm run ingest:wf`.
 - **Haringey** — `source_type='haringey_static'`, 45 zones (42 with hours), `geom` NULL. **Inert until step 4c** (no OSM zone tags, no polygons yet → matches no street). Run: `npm run ingest:haringey`.
 - **Tower Hamlets** — `source_type='tower_hamlets_static'`, 19 zones (all with hours; 16 mini-zones + 3 split-out sub-areas), `geom` NULL. **Inert until step 4c**, same as Haringey. Run: `npm run ingest:tower-hamlets`.
-- **Step 4c** then sources polygons for the `polygon`-join boroughs (Haringey, Tower Hamlets) and `UPDATE cpz SET geom = …`, after which their rows match streets via spatial intersection.
+## CPZ-area coverage (step 4c) — DONE for what's available; per-zone polygons still a gap
+
+- `npm run fetch:felt-cpz` downloads the Felt 2024 "London CPZ by borough" polygons for Haringey (48) + Tower Hamlets (5, coarse) → `static-data/<borough>-cpz-polygons.geojson` (committed). `npm run ingest:cpz-areas` loads them into `cpz_area`.
+- These polygons are **borough-level coverage only** — no per-zone identity. Query semantics (step 6): a street in a `polygon`-join borough that's inside a `cpz_area` polygon ⇒ confidence 0.6, "verify with signage" (which zone's hours apply is unknown — but we *do* have all that borough's zone hours in `cpz`, for UI context); outside all of them ⇒ not in a CPZ.
+- **Still pending**: per-zone polygons for Haringey / Tower Hamlets — would attach a specific `cpz` row's hours to a street via `cpz.geom`. No automatable source found (Felt has no zone codes; council web maps have no API) — FOI or a manual web-map scrape.
 
 ```bash
 # 1. point DATABASE_URL at a PostGIS DB and apply the schema
 psql "$DATABASE_URL" -f db/schema.sql
-# 2. (re)build the static-data files, then run the adapters
-npm run build:static-data
-npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey && npm run ingest:tower-hamlets
+# 2. (re)build/fetch the static data, then run the adapters
+npm run build:static-data && npm run fetch:felt-cpz   # fetch is ~7 min, 1300 polite requests
+npm run ingest:camden && npm run ingest:wf && npm run ingest:haringey && npm run ingest:tower-hamlets && npm run ingest:cpz-areas
 # prod: npm run build && node dist/ingestion/sources/camden.js  (etc.)
 ```
 

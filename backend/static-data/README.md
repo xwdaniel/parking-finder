@@ -29,5 +29,15 @@ Shape (validated by `parseStaticDataFile` in `src/ingestion/static.ts`):
 
 `hours` is OSM `opening_hours` syntax for the *restricted* window (null = uncatalogued).
 The adapter (`sources/<borough>.ts`) loads the file and writes `cpz` rows with `geom = NULL`.
-Build-order step 4c sources polygons for the `polygon`-join boroughs and `UPDATE cpz SET geom = …`,
-after which those rows start matching streets via spatial intersection.
+
+## CPZ-area polygons (step 4c) — `*-cpz-polygons.geojson`
+
+`haringey-cpz-polygons.geojson` (48 polygons), `tower-hamlets-cpz-polygons.geojson` (5 polygons) —
+fetched from the Felt "London CPZ by borough — 2024" map by `npm run fetch:felt-cpz`. **Borough-level
+coverage only**: each polygon is tagged with the borough, not a zone code, so they answer "is this
+street inside *a* CPZ here?" but not *which* zone's hours apply. `sources/cpz-areas.ts` loads them
+into `cpz_area`; the query (step 6) treats a street inside one as confidence 0.6 ("verify with
+signage") and a street outside all of them as not-in-a-CPZ. Per-zone polygons — which would attach
+a specific `cpz` row's hours via `cpz.geom` — remain a data gap for Haringey / Tower Hamlets (FOI /
+council web-map scrape; no automatable source found). Tower Hamlets' Felt coverage is coarse (5
+dissolved areas).

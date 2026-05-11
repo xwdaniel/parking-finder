@@ -7,16 +7,18 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/ingestion/hours.test.ts src/ingestion/static.test.ts src/ingestion/socrata.test.ts src/ingestion/sources/camden-transform.test.ts src/server.test.ts",
+    "test": "node --import tsx --test src/ingestion/hours.test.ts src/ingestion/static.test.ts src/ingestion/socrata.test.ts src/ingestion/sources/camden-transform.test.ts src/ingestion/sources/cpz-areas.test.ts src/server.test.ts",
     "build:static-data": "npm run build:static-data:wf && npm run build:static-data:haringey && npm run build:static-data:tower-hamlets",
     "build:static-data:wf": "tsx src/ingestion/scripts/build-wf-static.ts",
     "build:static-data:haringey": "tsx src/ingestion/scripts/build-haringey-static.ts",
     "build:static-data:tower-hamlets": "tsx src/ingestion/scripts/build-tower-hamlets-static.ts",
+    "fetch:felt-cpz": "tsx src/ingestion/scripts/fetch-felt-cpz.ts",
     "ingest:camden": "tsx src/ingestion/sources/camden.ts",
     "ingest:camden:prod": "node dist/ingestion/sources/camden.js",
     "ingest:wf": "tsx src/ingestion/sources/waltham-forest.ts",
     "ingest:haringey": "tsx src/ingestion/sources/haringey.ts",
-    "ingest:tower-hamlets": "tsx src/ingestion/sources/tower-hamlets.ts"
+    "ingest:tower-hamlets": "tsx src/ingestion/sources/tower-hamlets.ts",
+    "ingest:cpz-areas": "tsx src/ingestion/sources/cpz-areas.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

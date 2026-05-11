@@ -226,8 +226,9 @@ Sources, layered:
 2. **Per-borough CPZ adapters** — provide CPZ polygons (or OSM zone-tag joins) plus operational hours. Code lives under `backend/src/ingestion/`; each adapter outputs the common schema (§6.3). Architecture: **shared transport plumbing + a thin per-borough module** — `socrata.ts` (HTTP, pagination via `$limit`/`$offset`, SoQL `$where`) for API boroughs, `static.ts` (file loader) for JSON boroughs, then one small module per borough (`sources/<borough>.ts`, with a pure `sources/<borough>-transform.ts` for the row mapping) onto the common schema. Adding an API borough ≈ a few hours (mostly understanding their dataset), not free. Adapters today:
    - **Camden** ✅ (step 3) — `socrata.ts` + `sources/camden.ts` (+ `camden-transform.ts`), API at `opendata.camden.gov.uk`. `vf6e-iymu` (sub-zone polygons + Mon–Fri/Sat hours) → `cpz`, one row per zone *name* (sub-zone polygons sharing a name are unioned; `hours` derived from the two control fields, Sunday structurally unrestricted). `7hiv-3r9k` (per-bay restriction + LineString) → `cpz_bay` (raw `times_of_operation` kept; per-bay refinement of the time-aware query is a later enhancement). Idempotent transactional reload scoped to `source_type='camden_socrata'`. Run: `npm run ingest:camden`.
    - **Waltham Forest** ✅ (step 4) — `static.ts` + `sources/waltham-forest.ts` reads `backend/static-data/waltham-forest.json` (86 zones, 60 with hours; built from the spike by `npm run build:static-data:wf`) → `cpz` rows with `geom` NULL; streets join at query time via OSM tags (`zone.osm_zone_tag = cpz.source_zone_id`, where `osm_zone_tag` ∈ `parking:both:zone=*` / `parking:left:zone=*` / …). The 26 null-hour zones resolve incrementally via the personal-log `verified_hours` flow (§7). Run: `npm run ingest:wf`.
-   - **Haringey** ⚠️ (step 4 — hours only) — `sources/haringey.ts` reads `backend/static-data/haringey.json` (45 zones, 42 with hours; built from `haringey.gov.uk/parking/cpzs/all-cpz-hours` by `npm run build:static-data:haringey`, via the `haringeyHours` 12-hour-prose parser) → `cpz` rows with `geom` NULL. **Inert until step 4c**: Haringey has no OSM zone tags and no machine-readable polygons, so these rows match no street until polygons are sourced (step 4c) and merged in. Run: `npm run ingest:haringey`.
-   - **Tower Hamlets** ⚠️ (step 4b — hours only) — `sources/tower-hamlets.ts` reads `backend/static-data/tower-hamlets.json` (19 zones, all with hours; built by `npm run build:static-data:tower-hamlets` from the council parking-zones page + CPZ map PDF, hours hand-converted from prose to OSM syntax — cross-check `towerhamlets.traffweb.app`) → `cpz` rows with `geom` NULL. 16 mini-zones (A1–A6, B1–B4, C1–C4, D1–D2) plus 3 split-out sub-areas whose hours differ from the parent (A6 Brick Lane West, B3 Chrisp Street, C2 Trinity Square). **Inert until step 4c** (no OSM zone tags, no polygons). Run: `npm run ingest:tower-hamlets`.
+   - **Haringey** ⚠️ (step 4 — hours; step 4c — borough-level coverage) — `sources/haringey.ts` reads `backend/static-data/haringey.json` (45 zones, 42 with hours; built from `haringey.gov.uk/parking/cpzs/all-cpz-hours` by `npm run build:static-data:haringey` via the `haringeyHours` 12-hour-prose parser) → `cpz` rows with `geom` NULL. Haringey has no OSM zone tags and no machine-readable *per-zone* polygons, so those rows don't yet attach to a street; what's available (step 4c) is the Felt 2024 borough-level coverage (48 polygons → `cpz_area`), enough to flag a street as "in a Haringey CPZ — verify signage" (confidence 0.6, §6.5) vs. not. Per-zone polygons remain a data gap (FOI / web-map scrape). Run: `npm run ingest:haringey`.
+   - **Tower Hamlets** ⚠️ (step 4b — hours; step 4c — borough-level coverage) — `sources/tower-hamlets.ts` reads `backend/static-data/tower-hamlets.json` (19 zones, all with hours; built by `npm run build:static-data:tower-hamlets` from the council parking-zones page + CPZ map PDF, hours hand-converted from prose to OSM syntax — cross-check `towerhamlets.traffweb.app`) → `cpz` rows with `geom` NULL. 16 mini-zones (A1–A6, B1–B4, C1–C4, D1–D2) plus 3 split-out sub-areas whose hours differ from the parent (A6 Brick Lane West, B3 Chrisp Street, C2 Trinity Square). Per-zone polygons same gap as Haringey; step 4c gives the Felt 2024 borough-level coverage (5 coarse polygons → `cpz_area`). Run: `npm run ingest:tower-hamlets`.
+   - **Borough-level CPZ coverage** ✅ (step 4c) — `sources/cpz-areas.ts` + `static-data/<borough>-cpz-polygons.geojson` (fetched from the Felt 2024 London-CPZ map by `npm run fetch:felt-cpz`) → `cpz_area` (unlabelled polygons — borough only, no zone identity). Used for `polygon`-join boroughs where per-zone polygons aren't available: a street inside a `cpz_area` polygon ⇒ "in a CPZ here, hours-of-which unknown" ⇒ confidence 0.6 (UI can still show that borough's zone-hours spread as context); outside all of them ⇒ not in a CPZ. Run: `npm run ingest:cpz-areas`.
    - **Other boroughs** (Islington, Hackney, Newham, …) — named candidates only (§12); new adapter per borough as the app expands.
    - **No adapter / "neither world" borough** — still ingested for geometry if desired, but every zone there is confidence 0.4 with the borough-scoped warning (§4, §6.5). Never default-treated as all-free.
 3. **OSM (Overpass)** — street geometry source for every committed borough. Also provides `parking:lane:*` lane geometry as a confidence signal where present, and `parking:*:zone=*` tags for the WF-style zone-code join.
@@ -235,18 +236,22 @@ Sources, layered:
 ### 6.2 Time-aware inclusion (evaluated at query time, not ingest time)
 
 ```
-fn isEligible(zone, T):
-  if zone.geom intersects any TfL Red Route:
-    return false
+fn evaluate(zone, T) -> { eligible, confidence }:
+  if zone.geom intersects any TfL Red Route:                  return { false, — }       # excluded
 
-  for each cpz overlapping zone:
-    if openingHoursMatch(cpz.hours, T):
-      return false
+  # 1. zones with geometry + hours: Camden (cpz.geom) and WF (joined via osm_zone_tag)
+  for each cpz matching zone (by geom or osm_zone_tag), with cpz.hours not null:
+    if openingHoursMatch(cpz.hours, T):                       return { false, — }       # active CPZ ⇒ excluded
+    # else this cpz is off at T — keep going (another overlapping cpz might be on)
 
-  if zone has explicit OSM time-conditional restriction at T:
-    return false
+  if zone has explicit OSM time-conditional restriction active at T:  return { false, — }  # excluded
 
-  return true   # default: free unless something says otherwise
+  # 2. boroughs with only borough-level CPZ coverage (Haringey, Tower Hamlets):
+  if zone is inside a cpz_area polygon for its borough:
+    return { true, 0.6 }   # in a CPZ, which zone's hours apply is unknown — "verify with signage" (UI shows the borough's hours spread)
+
+  # 3. nothing positively says otherwise:
+  return { true, source-tier confidence }   # 1.0 Camden-covered / 0.8 WF JSON hit / 0.4 borough with no adapter at all
 ```
 
 The default **flips** from the original brief: a street is **eligible at T unless something positively says otherwise**, rather than excluded unless OSM positively confirms free. This change is forced by OSM coverage realities (Camden has 2.3% positive tagging) and is safe because the authoritative restriction sources (TfL Red Routes + per-borough CPZs) cover the cases that actually matter.
@@ -272,7 +277,7 @@ CREATE INDEX cpz_geom_gist ON cpz USING gist(geom) WHERE geom IS NOT NULL;
 CREATE INDEX cpz_zone_id   ON cpz (borough, source_zone_id);
 ```
 
-Where a source publishes finer-than-zone detail (currently only Camden's `7hiv-3r9k`), it also lands in a `cpz_bay` table — individual marked bays with their own `restriction_type`, raw `times_of_operation`, and `LineString` geometry. The time-aware query (§6.2) uses `cpz`; `cpz_bay` is captured for a later refinement (e.g. a stretch tagged "at any time" inside an otherwise-controlled zone). Full DDL for both tables (plus `red_route`) in `backend/db/schema.sql`.
+Where a source publishes finer-than-zone detail (currently only Camden's `7hiv-3r9k`), it also lands in a `cpz_bay` table — individual marked bays with their own `restriction_type`, raw `times_of_operation`, and `LineString` geometry. The time-aware query (§6.2) uses `cpz`; `cpz_bay` is captured for a later refinement (e.g. a stretch tagged "at any time" inside an otherwise-controlled zone). And where only *unlabelled* borough-level CPZ coverage is available (currently Haringey + Tower Hamlets, from the Felt 2024 map — they have hours-bearing `cpz` rows but no per-zone geometry), it lands in `cpz_area` — polygons tagged with the borough only, used to detect "in a CPZ here" without knowing which zone. Full DDL for all four tables (`cpz`, `cpz_bay`, `cpz_area`, `red_route`) in `backend/db/schema.sql`.
 
 ### 6.4 Zone unit (street segments)
 
@@ -298,13 +303,13 @@ Confidence reflects data-source quality and personal experience, not OSM tag ric
 
 | Confidence | Condition |
 |---|---|
-| 1.0 | Zone covered by an authoritative API source (Camden) AND not flagged unknown |
-| 0.8 | Zone joined to a static JSON entry with known hours (WF tagged + JSON hit) |
-| 0.6 | Zone tagged but hours uncatalogued (OSM `parking:*:zone=*` with no JSON match) — within a borough that *has* a CPZ adapter; surfaced in UI as "verify with signage" |
-| 0.4 | Zone in a borough with **no CPZ adapter at all** — we don't even know whether a CPZ exists here; surfaced with the borough-scoped warning banner + hatched map tint (§4) |
+| 1.0 | Zone covered by an authoritative API source (Camden `cpz` + hours) AND not flagged unknown |
+| 0.8 | Zone joined to a static-JSON entry with known hours (WF: OSM zone tag → `cpz` hours) |
+| 0.6 | "In a CPZ, but which?" — *either* a WF street tagged `parking:*:zone=*` with no JSON hours match, *or* a Haringey / Tower Hamlets street inside a borough-level `cpz_area` polygon (per-zone polygons not yet sourced). Surfaced as "verify with signage"; for the `cpz_area` case the UI also shows that borough's zone-hours spread as context |
+| 0.4 | Street in a borough with **no CPZ adapter at all** — we don't even know whether a CPZ exists here; surfaced with the borough-scoped warning banner + hatched map tint (§4) |
 | Excluded | Within an active CPZ at the user's arrival time, or on a TfL Red Route |
 
-Confidence is weighted 0.3 (walk mode) / 0.2 (transit mode) in scoring (§5.1, §5.2), so a 0.4-tier street ranks below an otherwise-identical covered-borough street. **Personal log overrides everything** (§7). UI displays confidence as 3 / 2 / 1 dots (0.6 and 0.4 both render as 1 dot, distinguished by the warning text); no numeric value.
+A street in a `polygon`-join borough that's *outside* all that borough's `cpz_area` polygons is treated as not in a CPZ — eligible at the borough's source tier (currently 0.8-ish: the Felt coverage is local-authority-sourced, but we accept it may miss the odd street). Confidence is weighted 0.3 (walk mode) / 0.2 (transit mode) in scoring (§5.1, §5.2), so a 0.4-tier street ranks below an otherwise-identical covered-borough street. **Personal log overrides everything** (§7). UI displays confidence as 3 / 2 / 1 dots (0.6 and 0.4 both render as 1 dot, distinguished by the warning text); no numeric value.
 
 ### 6.6 Resync schedule
 
@@ -313,7 +318,8 @@ Confidence is weighted 0.3 (walk mode) / 0.2 (transit mode) in scoring (§5.1, �
 | OSM (Overpass) | Weekly | Full refetch (all committed boroughs) into `zone_staging`, atomic swap |
 | Camden Socrata | Weekly (data refreshed daily upstream) | `npm run ingest:camden` — pull `vf6e-iymu` → `cpz`, `7hiv-3r9k` → `cpz_bay` |
 | Other API boroughs (per Step 0b) | Weekly | Same `socrata.ts` plumbing + per-borough module |
-| Static-JSON boroughs (Waltham Forest, +others per Step 0b) | Manual on edit | Files in `backend/static-data/`; loaded on backend startup; re-verify quarterly against council pages |
+| Static-JSON boroughs (Waltham Forest, Haringey, Tower Hamlets) | Manual on edit | `npm run build:static-data` (regenerate from source rows) → `npm run ingest:wf|:haringey|:tower-hamlets`; re-verify quarterly against council pages |
+| Felt CPZ-area polygons (Haringey, Tower Hamlets) → `cpz_area` | Annual (Felt map refreshed ~yearly) | `npm run fetch:felt-cpz` → `npm run ingest:cpz-areas` |
 | TfL Red Routes | Quarterly (changes rarely) | Manual refresh |
 
 ---
@@ -399,8 +405,8 @@ Over time the app becomes "places I have parked free before" — a much stronger
 | 3 | API-adapter plumbing `socrata.ts` + `sources/camden.ts` — `vf6e-iymu` → `cpz`, `7hiv-3r9k` → `cpz_bay` | **Done** — built + typechecked; `npm test` green (`socrata` pagination/errors/headers, hours parsing, Camden transforms); run `npm run ingest:camden` against a PostGIS DB to populate (no DB available in this env) |
 | 4 | Static-JSON adapter `static.ts` + `sources/waltham-forest.ts` + `sources/haringey.ts`; `backend/static-data/{waltham-forest,haringey}.json` built by `npm run build:static-data` | **Done** — WF: 86 zones (60 hrs), OSM-tag join; Haringey: 45 zones (42 hrs), `geom` NULL until step 4c; built + typechecked; `npm test` green (`static` validation/transform, `haringeyHours`); run `npm run ingest:wf` / `:haringey` against a PostGIS DB to populate |
 | 4b | Tower Hamlets hours — `sources/tower-hamlets.ts` + `static-data/tower-hamlets.json` (19 zones: 16 mini-zones + 3 split-out sub-areas) built from the council parking-zones page + CPZ map PDF; hours hand-converted to OSM syntax (cross-check `towerhamlets.traffweb.app`) | **Done** — built + typechecked; `npm test` green (committed static-data files validate); run `npm run ingest:tower-hamlets` against a PostGIS DB. Rows inert until step 4c (polygons) |
-| 4c | Polygon sourcing for Haringey + Tower Hamlets — Felt 2023 export / council web-map backing layers / FOI → `cpz.geom` (`UPDATE cpz SET geom = …`); spatial-intersection join at query time (no OSM zone tags in these two). Until done, both render geometry-only at the 0.4 tier (§6.5). | **Next** |
-| 5 | OSM zone ingestion — Overpass for all committed boroughs' residential ways (`*_residential.json` dumps already exist for Haringey/TH from Step 0b), `ST_LineMerge` grouping | |
+| 4c | CPZ-area coverage for Haringey + Tower Hamlets — `sources/cpz-areas.ts` + Felt 2024 polygons fetched via `npm run fetch:felt-cpz` (48 Haringey / 5 TH coarse) → `cpz_area` (borough-level, no zone identity). New `cpz_area` table; query semantics in §6.2/§6.5 ("in a CPZ here ⇒ 0.6 verify-signage"; outside ⇒ not in a CPZ) | **Partly done** — borough-level coverage built + fetched + tested (`npm test` 27 green; run `npm run ingest:cpz-areas` against a PostGIS DB). **Per-zone polygons for Haringey/TH still a data gap** — Felt carries no zone codes, no automatable council source found; needs FOI / web-map scrape (→ then `cpz.geom`) |
+| 5 | OSM zone ingestion — Overpass for all committed boroughs' residential ways (`*_residential.json` dumps already exist for Haringey/TH from Step 0b), `ST_LineMerge` grouping | **Next** |
 | 6 | Backend `GET /zones?bbox=&t=` — viewport-clipped GeoJSON with time-aware inclusion (§6.2); per-zone confidence incl. 0.4-tier for adapter-less areas | |
 | 7 | Search screen — Google Places autocomplete, mode toggle, time toggle, walk slider, bus toggle | |
 | 8 | Map + Results screen with real zones rendered, **walk mode only** — incl. per-zone "verify with signage" badge, borough-scoped warning banner + hatched tint (§4) | |
