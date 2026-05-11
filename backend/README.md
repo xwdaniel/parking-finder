@@ -19,31 +19,23 @@ backend/
   .env.example
 ```
 
-## Run locally
+## Database setup
 
-```bash
-cd backend
-cp .env.example .env          # then edit DATABASE_URL
+The project uses a **Supabase** (or **Neon**) free-tier Postgres+PostGIS as both the dev *and* production DB.
 
-# Local Postgres + PostGIS (one option):
-docker run --name parkfree-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgis/postgis:16-3.4
-psql "postgres://postgres:postgres@localhost:5432/postgres" -c 'create database parkfree;'
-psql "postgres://postgres:postgres@localhost:5432/parkfree" -f db/schema.sql
+1. Create a free Supabase project → enable the **PostGIS** extension (Dashboard → Database → Extensions → search "postgis" → enable) → copy the **pooled** connection string (Project Settings → Database → Connection string → "Transaction" pooler; it includes `?sslmode=require`). Neon: create a project, `create extension postgis;`, copy the connection string.
+2. `cd backend && cp .env.example .env`, set `DATABASE_URL=…` (leave `PGSSL` unset so SSL stays on for the managed DB).
+3. `npm install && npm run db:migrate` — applies `db/schema.sql` (idempotent; no `psql` needed).
+4. `npm run build:static-data && npm run fetch:felt-cpz` then `npm run ingest:all` — populates `cpz` / `cpz_bay` / `cpz_area` (Camden API + WF/Haringey/TH static JSON + Felt area polygons). `npm run db:status` shows what's loaded.
+5. `npm run dev` → `curl -s localhost:3000/health | jq` →
+   ```json
+   { "status": "ok", "time": "…", "db": { "connected": true, "postgis": "3.4.2", "serverVersion": "16.4" } }
+   ```
+   `/health` returns **503** with `status:"degraded"` if PostGIS isn't enabled, `status:"down"` if the DB is unreachable.
 
-npm install
-npm run dev                   # tsx watch — http://localhost:3000
-curl -s localhost:3000/health | jq
-```
+For production, `fly secrets set DATABASE_URL=…` (same string) and `fly deploy` (see below).
 
-`GET /health` →
-```json
-{ "status": "ok", "time": "…", "db": { "connected": true, "postgis": "3.4.2", "serverVersion": "16.4" } }
-```
-Returns **503** with `status: "degraded"` if PostGIS isn't enabled, or `status: "down"` if the DB is unreachable.
-
-## Managed DB (production)
-
-Use **Supabase** or **Neon** free tier. Both ship PostGIS (Supabase: enable via Dashboard → Database → Extensions; Neon: `create extension postgis;`). Take the pooled connection string (it includes `?sslmode=require`) — leave `PGSSL` unset so SSL stays on.
+*Local-only alternative:* `brew install postgresql@16 postgis && brew services start postgresql@16 && createdb parkfree && psql parkfree -c 'create extension postgis'`, then `DATABASE_URL=postgres://localhost:5432/parkfree PGSSL=disable` in `.env`. Or a disposable Docker DB: `docker run --name parkfree-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgis/postgis:16-3.4`.
 
 ## Deploy to Fly.io
 
@@ -65,9 +57,12 @@ fly logs
 | `npm start` | `node dist/server.js` (what the Docker image runs) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | `node --test` (built-in runner via `tsx`) — no DB needed |
+| `npm run db:migrate` | apply `db/schema.sql` to `DATABASE_URL` (idempotent; no `psql` needed) |
+| `npm run db:status` | PostGIS version + row counts per table + `cpz` breakdown by source |
 | `npm run build:static-data` | regenerate `static-data/{waltham-forest,haringey,tower-hamlets}.json` (hours) |
 | `npm run fetch:felt-cpz` | download Felt 2024 CPZ-area polygons → `static-data/*-cpz-polygons.geojson` (~7 min) |
-| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` / `:cpz-areas` | run a CPZ adapter (needs `DATABASE_URL`) |
+| `npm run ingest:all` | run every CPZ adapter (camden, wf, haringey, tower-hamlets, cpz-areas) |
+| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` / `:cpz-areas` | run one CPZ adapter (needs `DATABASE_URL`) |
 
 ## Tests
 
