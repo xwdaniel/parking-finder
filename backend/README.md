@@ -23,7 +23,7 @@ backend/
 
 The project uses a **Supabase** (or **Neon**) free-tier Postgres+PostGIS as both the dev *and* production DB.
 
-1. Create a free Supabase project → enable the **PostGIS** extension (Dashboard → Database → Extensions → search "postgis" → enable) → copy the **pooled** connection string (Project Settings → Database → Connection string → "Transaction" pooler; it includes `?sslmode=require`). Neon: create a project, `create extension postgis;`, copy the connection string.
+1. Create a free Supabase project → enable the **PostGIS** extension (Dashboard → Database → Extensions → search "postgis" → enable) → copy the **Session pooler** connection string (Project Settings → Database → Connection string → mode "Session", port 5432, host `aws-0-<region>.pooler.supabase.com`). Session mode (not Transaction/pgBouncer) is the right fit for a long-running server holding a small connection pool — it behaves like a real per-session connection (no prepared-statement caveats) and is IPv4 so it also works from Fly.io. Neon: create a project, `create extension postgis;`, copy the connection string.
 2. `cd backend && cp .env.example .env`, set `DATABASE_URL=…` (leave `PGSSL` unset so SSL stays on for the managed DB).
 3. `npm install && npm run db:migrate` — applies `db/schema.sql` (idempotent; no `psql` needed).
 4. `npm run build:static-data && npm run fetch:felt-cpz` then `npm run ingest:all` — populates `cpz` / `cpz_bay` / `cpz_area` (Camden API + WF/Haringey/TH static JSON + Felt area polygons). `npm run db:status` shows what's loaded.
