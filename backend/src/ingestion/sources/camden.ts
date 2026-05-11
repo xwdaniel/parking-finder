@@ -11,7 +11,8 @@
 import { pool } from '../../db/pool';
 import { config } from '../../config';
 import { fetchSocrataAll } from '../socrata';
-import type { CpzRecord, CpzBayRecord } from '../types';
+import { writeCpzRecords } from '../cpz-store';
+import type { CpzBayRecord } from '../types';
 import {
   CAMDEN_SOURCE_TYPE,
   transformCamdenZones,
@@ -25,33 +26,6 @@ const ZONES_DATASET = 'vf6e-iymu';
 const BAYS_DATASET = '7hiv-3r9k';
 
 // --- DB writes ------------------------------------------------------------------
-
-async function writeZones(records: CpzRecord[]): Promise<void> {
-  const client = await pool.connect();
-  try {
-    await client.query('begin');
-    await client.query('delete from cpz where source_type = $1', [CAMDEN_SOURCE_TYPE]);
-    for (const z of records) {
-      await client.query(
-        `insert into cpz (id, borough, source_zone_id, display_name, geom, hours, source_type, last_synced_at)
-         values ($1, $2, $3, $4,
-           case when jsonb_array_length($5::jsonb) = 0 then null
-                else st_multi(st_collectionextract(st_makevalid(st_setsrid(
-                       st_union(array(select st_geomfromgeojson(x)
-                                      from jsonb_array_elements_text($5::jsonb) as t(x))), 4326)), 3))
-           end,
-           $6, $7, now())`,
-        [z.id, z.borough, z.sourceZoneId, z.displayName, JSON.stringify(z.geomGeoJson), z.hours, z.sourceType],
-      );
-    }
-    await client.query('commit');
-  } catch (err) {
-    await client.query('rollback');
-    throw err;
-  } finally {
-    client.release();
-  }
-}
 
 async function writeBays(records: CpzBayRecord[]): Promise<void> {
   const client = await pool.connect();
@@ -99,7 +73,7 @@ export async function ingestCamden(): Promise<void> {
   console.log(`[camden] fetching ${ZONES_DATASET} (CPZ polygons)…`);
   const zoneRows = await fetchSocrataAll<CamdenZoneRow>({ domain: DOMAIN, dataset: ZONES_DATASET, appToken });
   const zones = transformCamdenZones(zoneRows);
-  await writeZones(zones);
+  await writeCpzRecords(zones, CAMDEN_SOURCE_TYPE);
   console.log(`[camden] wrote ${zones.length} zones to cpz (from ${zoneRows.length} polygon rows)`);
 
   console.log(`[camden] fetching ${BAYS_DATASET} (per-bay detail)…`);

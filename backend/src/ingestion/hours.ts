@@ -66,3 +66,90 @@ export function camdenHours(
   if (sa) parts.push(`Sa ${sa}`);
   return parts.length > 0 ? parts.join('; ') : null;
 }
+
+// --- Haringey (and similar councils that publish 12-hour, prose-style hours) -----
+
+const DAY_NAMES: Record<string, string> = {
+  mon: 'Mo', tue: 'Tu', wed: 'We', thu: 'Th', fri: 'Fr', sat: 'Sa', sun: 'Su',
+};
+
+/** "8am" → "08:00"; "6:30pm" → "18:30"; "12pm"/"12 noon" → "12:00"; "12am"/"midnight" → "00:00". */
+function to24h(hour: number, minute: number, meridiem: string): string {
+  if (minute < 0 || minute > 59 || hour < 1 || hour > 12) {
+    throw new Error(`time out of range: ${hour}:${minute} ${meridiem}`);
+  }
+  let h: number;
+  switch (meridiem) {
+    case 'noon': h = 12; break;
+    case 'midnight': h = 0; break;
+    case 'am': h = hour === 12 ? 0 : hour; break;
+    case 'pm': h = hour === 12 ? 12 : hour + 12; break;
+    default: throw new Error(`missing/unknown meridiem: "${meridiem}"`);
+  }
+  return `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+export interface HaringeyHours {
+  /** OSM opening_hours syntax for the restricted window, or null if uncatalogued / event-only. */
+  hours: string | null;
+  /** Parenthetical / trailing qualifier from the council string, e.g. "non-event; event days vary". */
+  note: string | null;
+}
+
+/**
+ * Parse a Haringey-style council hours string (e.g. "Mon-Fri 8am-6:30pm",
+ * "Mon-Sat 8am-6:30pm (non-event); event days vary", "Event-only zone").
+ * Returns `{ hours, note }`; `hours` is null when the string carries no usable
+ * day/time window (event-only zones, etc.).
+ */
+export function haringeyHours(raw: string | null | undefined): HaringeyHours {
+  if (raw == null) return { hours: null, note: null };
+  const original = raw.trim();
+  if (original === '') return { hours: null, note: null };
+
+  // Pull off a parenthetical and/or everything after the first ';' as the note.
+  const noteParts: string[] = [];
+  let core = original;
+  const paren = core.match(/\(([^)]*)\)/);
+  if (paren) {
+    if (paren[1]) noteParts.push(paren[1].trim());
+    core = (core.slice(0, paren.index) + core.slice((paren.index ?? 0) + paren[0].length)).trim();
+  }
+  const semi = core.indexOf(';');
+  if (semi !== -1) {
+    const after = core.slice(semi + 1).trim();
+    if (after) noteParts.push(after);
+    core = core.slice(0, semi).trim();
+  }
+  core = core.replace(/\s+/g, ' ').trim();
+  const note = noteParts.length > 0 ? noteParts.join('; ') : null;
+
+  // Event-only / no time window.
+  if (/event[- ]only/i.test(original) || !/\d/.test(core)) {
+    return { hours: null, note: note ?? original };
+  }
+
+  const dayMatch = core.match(
+    /^(mon|tue|wed|thu|fri|sat|sun)(?:\s*[-–]\s*(mon|tue|wed|thu|fri|sat|sun))?\s+(.+)$/i,
+  );
+  if (!dayMatch) throw new Error(`unparseable Haringey hours: "${raw}"`);
+  const startDay = DAY_NAMES[dayMatch[1]!.toLowerCase()];
+  const endDayRaw = dayMatch[2];
+  const endDay = endDayRaw ? DAY_NAMES[endDayRaw.toLowerCase()] : undefined;
+  const timePart = dayMatch[3]!;
+  if (!startDay || (endDayRaw && !endDay)) throw new Error(`unparseable day range: "${raw}"`);
+  const days = endDay ? `${startDay}-${endDay}` : startDay;
+
+  const t = timePart.match(
+    /^(\d{1,2})(?::(\d{2}))?\s*(am|pm|noon|midnight)?\s*[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|noon|midnight)?$/i,
+  );
+  if (!t) throw new Error(`unparseable time window: "${timePart}" (from "${raw}")`);
+  const startMer = (t[3] ?? '').toLowerCase();
+  const endMer = (t[6] ?? '').toLowerCase();
+  // "12 noon" sometimes written without am/pm; otherwise both ends must carry a meridiem.
+  if (!startMer || !endMer) throw new Error(`ambiguous 12-hour time (missing am/pm): "${raw}"`);
+  const start = to24h(Number(t[1]), Number(t[2] ?? '0'), startMer);
+  const end = to24h(Number(t[4]), Number(t[5] ?? '0'), endMer);
+
+  return { hours: `${days} ${start}-${end}`, note };
+}

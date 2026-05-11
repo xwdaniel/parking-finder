@@ -65,7 +65,8 @@ fly logs
 | `npm start` | `node dist/server.js` (what the Docker image runs) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | `node --test` (built-in runner via `tsx`) — no DB needed |
-| `npm run ingest:camden` | run the Camden CPZ adapter (needs `DATABASE_URL`) |
+| `npm run build:static-data` | regenerate `static-data/waltham-forest.json` + `haringey.json` |
+| `npm run ingest:camden` / `:wf` / `:haringey` | run a CPZ adapter (needs `DATABASE_URL`) |
 
 ## Tests
 
@@ -77,5 +78,6 @@ for integration testing once a PostGIS instance exists.
 |---|---|
 | `src/server.test.ts` | `buildServer()` via `inject`: `/` banner, `/health` → 503 when DB down, CORS reflection, 404 |
 | `src/ingestion/socrata.test.ts` | `fetchSocrataAll` — pagination (incl. exact-multiple), HTTP-error rejection, `X-App-Token`, `$select`/`$where`/`$order` |
-| `src/ingestion/hours.test.ts` | `parseTimeRanges`, `camdenHours` — council hours → OSM `opening_hours` syntax |
+| `src/ingestion/hours.test.ts` | `parseTimeRanges`, `camdenHours`, `haringeyHours` — council hours → OSM `opening_hours` syntax |
+| `src/ingestion/static.test.ts` | `parseStaticDataFile` (validation), `staticZonesToCpzRecords` (zone → `cpz` row mapping) |
 | `src/ingestion/sources/camden-transform.test.ts` | `transformCamdenZones` (group by name, union polygons, derive hours), `transformCamdenBays` |

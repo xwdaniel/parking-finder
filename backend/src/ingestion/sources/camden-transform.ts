@@ -2,6 +2,7 @@
 // camden-transform.test.ts; consumed by camden.ts which adds fetch + DB writes.
 
 import { camdenHours } from '../hours';
+import { slug } from '../util';
 import type { CpzRecord, CpzBayRecord } from '../types';
 
 export const CAMDEN_BOROUGH = 'camden';
@@ -25,13 +26,6 @@ export interface CamdenBayRow {
   restriction_type?: string;
   times_of_operation?: string;
   epsg_4326_geojson_geometry?: string; // stringified GeoJSON LineString | MultiLineString
-}
-
-function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 /**

@@ -1,0 +1,612 @@
+{
+  "borough": "waltham_forest",
+  "displayBorough": "London Borough of Waltham Forest",
+  "join": "osm_zone_tag",
+  "sourceType": "waltham_forest_static",
+  "generatedAt": "2026-05-10",
+  "source": "Waltham Forest council CPZ map PDFs — hours extracted via the osm_spike pipeline (pdftotext / tesseract OCR / Claude vision / web search); see osm_spike/README.md. Streets join to these zones via OSM parking:*:zone=* tags.",
+  "zones": [
+    {
+      "code": "AM",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "web_search"
+    },
+    {
+      "code": "BA",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "BL",
+      "name": "Blackhorse Lane",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdf_read"
+    },
+    {
+      "code": "BLN",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "BP",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "BR",
+      "name": "Blackhorse Road",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdf_read"
+    },
+    {
+      "code": "BWR",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "CE",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "CF",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "CG",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "CH",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "CHE",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "CHN",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "CL",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "CML",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "CTN",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "CTS",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "FGN",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "FR",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "FRN",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "FSR",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "GGE",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "GGN",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "GGS",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "GGW",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "GM",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "GS",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "H-TD",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "HE",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "HF",
+      "name": null,
+      "hours": "Mo-Su 08:00-21:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "HH",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "HHE",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "HHN",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "HPS",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "HS",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "HST",
+      "name": "High Street",
+      "hours": null,
+      "note": "PDF map shows boundary only; hours not on PDF — needs separate source",
+      "provenance": "pdf_has_no_hours"
+    },
+    {
+      "code": "HT",
+      "name": "Hilltop",
+      "hours": null,
+      "note": "PDF map shows boundary only; hours not on PDF — needs separate source",
+      "provenance": "pdf_has_no_hours"
+    },
+    {
+      "code": "Jacks Farm RPZ",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "KS",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LBR",
+      "name": "Lea Bridge Road",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdf_read"
+    },
+    {
+      "code": "LH",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LK",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "LNE",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LNN",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LNS",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "LNW",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr_400dpi"
+    },
+    {
+      "code": "LPE",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "LPN",
+      "name": null,
+      "hours": "Mo-Sa 08:00-21:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "LPW",
+      "name": null,
+      "hours": "Mo-Su 08:00-21:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "LS",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "LSE",
+      "name": null,
+      "hours": "Mo-Fr 10:00-14:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LSN",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LSS",
+      "name": null,
+      "hours": "Mo-Fr 10:00-14:00",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "LSW",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "MC",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "MD",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "MH",
+      "name": "Markhouse",
+      "hours": null,
+      "note": "PDF map shows boundary only; hours not on PDF — needs separate source",
+      "provenance": "pdf_has_no_hours"
+    },
+    {
+      "code": "ML",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "MR",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr_400dpi"
+    },
+    {
+      "code": "MW",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "NC",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr_400dpi"
+    },
+    {
+      "code": "OL",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "QB",
+      "name": "Queen's Road Boundary Road",
+      "hours": "Mo-Fr 08:00-12:30, 14:30-18:30; Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdf_read"
+    },
+    {
+      "code": "RA",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "RC",
+      "name": null,
+      "hours": "Mo-Su 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "SB(n)",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "SB(s)",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "SJP",
+      "name": null,
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "ocr_400dpi"
+    },
+    {
+      "code": "SNW",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "SR",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "TR",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "TS",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "TU",
+      "name": "Tudor Road",
+      "hours": "Mo-Su 07:30-22:30",
+      "note": "7-day operation, no weekend free period",
+      "provenance": "web_search"
+    },
+    {
+      "code": "VA",
+      "name": "Village Area",
+      "hours": null,
+      "note": "PDF map shows boundary only; hours not on PDF — needs separate source",
+      "provenance": "pdf_has_no_hours"
+    },
+    {
+      "code": "VFR",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "WA",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "WD",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "WR",
+      "name": null,
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "WS",
+      "name": null,
+      "hours": "Mo-Su 08:00-18:30",
+      "note": null,
+      "provenance": "pdftotext"
+    },
+    {
+      "code": "WSC",
+      "name": "Walthamstow Central",
+      "hours": null,
+      "note": "PDF map shows boundary only; hours not on PDF — needs separate source",
+      "provenance": "pdf_has_no_hours"
+    },
+    {
+      "code": "WSE",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "WSN",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "WSS",
+      "name": null,
+      "hours": "Mo-Fr 10:00-16:00",
+      "note": null,
+      "provenance": "ocr_400dpi"
+    },
+    {
+      "code": "WXN",
+      "name": null,
+      "hours": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing",
+      "provenance": "no_pdf_found"
+    },
+    {
+      "code": "WXS(e)",
+      "name": null,
+      "hours": "Mo-Su 08:00-21:00",
+      "note": null,
+      "provenance": "ocr"
+    },
+    {
+      "code": "WXS(w)",
+      "name": null,
+      "hours": "Mo-Fr 09:00-18:00",
+      "note": null,
+      "provenance": "ocr"
+    }
+  ]
+}

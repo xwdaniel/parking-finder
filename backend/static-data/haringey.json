@@ -1,0 +1,325 @@
+{
+  "borough": "haringey",
+  "displayBorough": "London Borough of Haringey",
+  "join": "polygon",
+  "sourceType": "haringey_static",
+  "generatedAt": "2026-05-11",
+  "source": "https://www.haringey.gov.uk/parking/cpzs/all-cpz-hours (fetched 2026-05-11). Hours only — Haringey publishes no machine-readable zone polygons; the street→zone join needs polygons sourced separately (build-order step 4c). Free outside CPZ hours and on bank holidays; several zones near Spurs stadium have extended event-day hours.",
+  "zones": [
+    {
+      "code": "7S",
+      "name": "Seven Sisters",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "7SS",
+      "name": "Seven Sisters South",
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "AP",
+      "name": "Alexandra Palace",
+      "hours": "Mo-Fr 12:00-14:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "B",
+      "name": "Belmont",
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "BC",
+      "name": "Bruce Castle",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "BG",
+      "name": "Bounds Green",
+      "hours": "Mo-Fr 10:00-12:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "BGE",
+      "name": "Bounds Green East",
+      "hours": "Mo-Fr 11:00-13:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "BGN",
+      "name": "Bruce Grove North",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "BGW",
+      "name": "Bruce Grove West",
+      "hours": "Mo-Fr 14:00-16:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "CEA",
+      "name": "Crouch End A",
+      "hours": "Mo-Fr 10:00-12:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "CEB",
+      "name": "Crouch End B",
+      "hours": "Mo-Fr 14:00-16:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "FG",
+      "name": "Fortis Green",
+      "hours": "Mo-Fr 11:00-13:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "FP",
+      "name": "Finsbury Park",
+      "hours": "Mo-Sa 08:30-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "FPB",
+      "name": "Finsbury Park",
+      "hours": "Mo-Sa 08:30-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "FPC",
+      "name": "Finsbury Park",
+      "hours": "Mo-Sa 08:30-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "GLA",
+      "name": "Green Lanes Zone A",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "GLB",
+      "name": "Green Lanes Zone B",
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "HGA",
+      "name": "Highgate",
+      "hours": "Mo-Fr 10:00-12:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "HGSTA",
+      "name": "Highgate Station",
+      "hours": "Mo-Fr 10:00-12:00",
+      "note": "varies by sub-zone",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "HGSTA O",
+      "name": "Highgate Station Outer",
+      "hours": "Mo-Fr 10:00-12:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "HN",
+      "name": "Hornsey North",
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "HNE",
+      "name": "Hornsey North East",
+      "hours": "Mo-Fr 10:00-14:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "HS",
+      "name": "Hornsey South",
+      "hours": "Mo-Fr 11:00-13:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "JR",
+      "name": "Jarrow Road",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "MH",
+      "name": "Muswell Hill",
+      "hours": "Mo-Su 11:00-13:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "MHW",
+      "name": "Muswell Hill West",
+      "hours": "Mo-Fr 10:00-14:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "MR",
+      "name": "Myddleton Road Stop & Shop",
+      "hours": "Mo-Sa 09:00-18:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "NPW",
+      "name": "Northumberland Park West",
+      "hours": "Mo-Fr 08:00-20:00",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "SA",
+      "name": "St Ann's",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "SG",
+      "name": "Stroud Green",
+      "hours": "Mo-Fr 12:00-14:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "SL",
+      "name": "St Luke's",
+      "hours": "Mo-Fr 11:00-13:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "ST",
+      "name": "South Tottenham",
+      "hours": "Mo-Fr 10:00-12:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "TED",
+      "name": "Tottenham Event Day",
+      "hours": null,
+      "note": "Event-only zone",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "TG",
+      "name": "Tower Gardens",
+      "hours": "Mo-Su 08:00-18:30",
+      "note": "non-event; varied hours for Walpole Road sub-zone",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "TGED",
+      "name": "Tower Gardens Event Day",
+      "hours": null,
+      "note": "Event-only zone",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "TH",
+      "name": "The Hale",
+      "hours": "Mo-Fr 08:30-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "THN",
+      "name": "Tottenham Hale North",
+      "hours": "Mo-Su 08:00-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "THNED",
+      "name": "Tottenham Hale North Event Day",
+      "hours": null,
+      "note": "Event-only zone",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "TN",
+      "name": "Tottenham North",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "WG",
+      "name": "Wood Green Inner Zone",
+      "hours": "Mo-Su 08:00-22:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "WG-O",
+      "name": "Wood Green Outer Zone",
+      "hours": "Mo-Sa 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "WHL",
+      "name": "White Hart Lane",
+      "hours": "Mo-Su 08:00-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "WL",
+      "name": "Willoughby Lane",
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": "non-event; event days vary",
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "WS",
+      "name": "Woodside",
+      "hours": "Mo-Fr 08:00-18:30",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    },
+    {
+      "code": "WW",
+      "name": "Woodside West",
+      "hours": "Mo-Fr 11:00-13:00",
+      "note": null,
+      "provenance": "haringey council all-cpz-hours page"
+    }
+  ]
+}
