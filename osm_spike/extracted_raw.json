@@ -1,0 +1,380 @@
+[
+  {
+    "zone_code": "BA",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "BL",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "BLN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "BR",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "BWR",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "CF",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "CH",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "CHE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "CHN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "CL",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "CTN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "CTS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "FR",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "FRN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "FSR",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "GGE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "GGS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "GGW",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "GM",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "GS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "HF",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Su 08:00-21:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "HH",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "HHE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "HS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "HST",
+    "zone_name": "High Street",
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "HT",
+    "zone_name": "Hilltop",
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "KS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LBR",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "LH",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LNE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LNN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LNS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "LNW",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "LPE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "LPN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-21:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "LPW",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Su 08:00-21:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "LSE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-14:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LSN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LSS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-14:00",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "LSW",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "MD",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "MH",
+    "zone_name": "Markhouse",
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "MR",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "NC",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "OL",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "QB",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "RC",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Su 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "SBn",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "SBs",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "SJP",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "TR",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "TS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "VA",
+    "zone_name": "Village Area",
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "VFR",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "WA",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "WR",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "WS",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Su 08:00-18:30",
+    "extraction_method": "pdftotext"
+  },
+  {
+    "zone_code": "WSC",
+    "zone_name": "Walthamstow Central",
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "WSE",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "WSN",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "WSS",
+    "zone_name": null,
+    "hours_osm_syntax": null,
+    "extraction_method": "failed"
+  },
+  {
+    "zone_code": "WXSe",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Su 08:00-21:00",
+    "extraction_method": "ocr"
+  },
+  {
+    "zone_code": "WXSw",
+    "zone_name": null,
+    "hours_osm_syntax": "Mo-Fr 09:00-18:00",
+    "extraction_method": "ocr"
+  }
+]

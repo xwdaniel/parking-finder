@@ -1,0 +1,309 @@
+{
+  "boroughs": [
+    {
+      "name": "Haringey",
+      "total": 2196,
+      "any": 62,
+      "anyPct": "2.8%",
+      "zone": 6,
+      "zonePct": "0.3%",
+      "posLane": 46,
+      "posLanePct": "2.1%",
+      "posCond": 1,
+      "posCondPct": "0.0%",
+      "restr": 11,
+      "restrPct": "0.5%",
+      "timeBased": 6,
+      "timeBasedPct": "0.3%",
+      "distinctZoneCodes": 3,
+      "zoneCodes": [
+        [
+          "HS",
+          3
+        ],
+        [
+          "HG STA",
+          2
+        ],
+        [
+          "TED",
+          1
+        ]
+      ]
+    },
+    {
+      "name": "Tower Hamlets",
+      "total": 2130,
+      "any": 253,
+      "anyPct": "11.9%",
+      "zone": 0,
+      "zonePct": "0.0%",
+      "posLane": 171,
+      "posLanePct": "8.0%",
+      "posCond": 0,
+      "posCondPct": "0.0%",
+      "restr": 1,
+      "restrPct": "0.0%",
+      "timeBased": 0,
+      "timeBasedPct": "0.0%",
+      "distinctZoneCodes": 0,
+      "zoneCodes": []
+    },
+    {
+      "name": "Islington",
+      "total": 1619,
+      "any": 46,
+      "anyPct": "2.8%",
+      "zone": 0,
+      "zonePct": "0.0%",
+      "posLane": 17,
+      "posLanePct": "1.1%",
+      "posCond": 0,
+      "posCondPct": "0.0%",
+      "restr": 0,
+      "restrPct": "0.0%",
+      "timeBased": 0,
+      "timeBasedPct": "0.0%",
+      "distinctZoneCodes": 0,
+      "zoneCodes": []
+    },
+    {
+      "name": "Hackney",
+      "total": 2027,
+      "any": 293,
+      "anyPct": "14.5%",
+      "zone": 0,
+      "zonePct": "0.0%",
+      "posLane": 156,
+      "posLanePct": "7.7%",
+      "posCond": 0,
+      "posCondPct": "0.0%",
+      "restr": 77,
+      "restrPct": "3.8%",
+      "timeBased": 0,
+      "timeBasedPct": "0.0%",
+      "distinctZoneCodes": 0,
+      "zoneCodes": []
+    },
+    {
+      "name": "Newham",
+      "total": 3521,
+      "any": 2510,
+      "anyPct": "71.3%",
+      "zone": 2041,
+      "zonePct": "58.0%",
+      "posLane": 534,
+      "posLanePct": "15.2%",
+      "posCond": 0,
+      "posCondPct": "0.0%",
+      "restr": 210,
+      "restrPct": "6.0%",
+      "timeBased": 5,
+      "timeBasedPct": "0.1%",
+      "distinctZoneCodes": 30,
+      "zoneCodes": [
+        [
+          "B",
+          285
+        ],
+        [
+          "CMH",
+          240
+        ],
+        [
+          "CTN",
+          165
+        ],
+        [
+          "CT",
+          137
+        ],
+        [
+          "PR",
+          133
+        ],
+        [
+          "L",
+          109
+        ],
+        [
+          "PS",
+          106
+        ],
+        [
+          "MO",
+          96
+        ],
+        [
+          "RDE",
+          91
+        ],
+        [
+          "GSN",
+          82
+        ],
+        [
+          "RDW",
+          81
+        ],
+        [
+          "U",
+          65
+        ],
+        [
+          "ESE",
+          55
+        ],
+        [
+          "F",
+          45
+        ],
+        [
+          "ESW",
+          42
+        ],
+        [
+          "W",
+          39
+        ],
+        [
+          "M",
+          38
+        ],
+        [
+          "PN",
+          38
+        ],
+        [
+          "MS",
+          37
+        ],
+        [
+          "R",
+          34
+        ],
+        [
+          "SNW",
+          34
+        ],
+        [
+          "EV",
+          23
+        ],
+        [
+          "SNE",
+          22
+        ],
+        [
+          "BL",
+          14
+        ],
+        [
+          "E",
+          11
+        ],
+        [
+          "S",
+          11
+        ],
+        [
+          "CH",
+          5
+        ],
+        [
+          "CHE",
+          5
+        ],
+        [
+          "CF",
+          1
+        ],
+        [
+          "FGN",
+          1
+        ]
+      ]
+    }
+  ],
+  "streets": [
+    {
+      "name": "Antill Road",
+      "borough": "Haringey",
+      "file": "haringey_residential.json",
+      "found": 4,
+      "segments": [
+        {
+          "wayId": 4339794,
+          "parkingTags": {},
+          "allTagsSample": {
+            "name": "Antill Road"
+          },
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "hasZoneTag": false,
+            "timeIntervalPresent": false,
+            "zoneCodes": []
+          }
+        },
+        {
+          "wayId": 38820878,
+          "parkingTags": {},
+          "allTagsSample": {
+            "name": "Antill Road"
+          },
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "hasZoneTag": false,
+            "timeIntervalPresent": false,
+            "zoneCodes": []
+          }
+        },
+        {
+          "wayId": 261791690,
+          "parkingTags": {},
+          "allTagsSample": {
+            "name": "Antill Road"
+          },
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "hasZoneTag": false,
+            "timeIntervalPresent": false,
+            "zoneCodes": []
+          }
+        },
+        {
+          "wayId": 586103902,
+          "parkingTags": {},
+          "allTagsSample": {
+            "name": "Antill Road"
+          },
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "hasZoneTag": false,
+            "timeIntervalPresent": false,
+            "zoneCodes": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sclater Street",
+      "borough": "Tower Hamlets",
+      "file": "tower_hamlets_residential.json",
+      "found": 0,
+      "segments": []
+    }
+  ]
+}

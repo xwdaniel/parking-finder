@@ -1,0 +1,783 @@
+{
+  "generated_at": "2026-05-10",
+  "borough": "London Borough of Waltham Forest",
+  "osm_zone_count": 86,
+  "with_hours": 60,
+  "without_hours": 26,
+  "zones": {
+    "MW": {
+      "osm_zone_tag": "MW",
+      "pdf_stem": "MW",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "LSE": {
+      "osm_zone_tag": "LSE",
+      "pdf_stem": "LSE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-14:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "VFR": {
+      "osm_zone_tag": "VFR",
+      "pdf_stem": "VFR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "BL": {
+      "osm_zone_tag": "BL",
+      "pdf_stem": "BL",
+      "zone_name": "Blackhorse Lane",
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdf_read",
+      "pdf_url": null,
+      "note": null
+    },
+    "HH": {
+      "osm_zone_tag": "HH",
+      "pdf_stem": "HH",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "CHE": {
+      "osm_zone_tag": "CHE",
+      "pdf_stem": "CHE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "HS": {
+      "osm_zone_tag": "HS",
+      "pdf_stem": "HS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "HHN": {
+      "osm_zone_tag": "HHN",
+      "pdf_stem": "HHN",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "VA": {
+      "osm_zone_tag": "VA",
+      "pdf_stem": "VA",
+      "zone_name": "Village Area",
+      "hours_osm_syntax": null,
+      "source": "pdf_has_no_hours",
+      "pdf_url": null,
+      "note": "PDF map shows boundary only; hours not on PDF \u2014 needs separate source"
+    },
+    "WXS(w)": {
+      "osm_zone_tag": "WXS(w)",
+      "pdf_stem": "WXSw",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 09:00-18:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "CH": {
+      "osm_zone_tag": "CH",
+      "pdf_stem": "CH",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "KS": {
+      "osm_zone_tag": "KS",
+      "pdf_stem": "KS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "MH": {
+      "osm_zone_tag": "MH",
+      "pdf_stem": "MH",
+      "zone_name": "Markhouse",
+      "hours_osm_syntax": null,
+      "source": "pdf_has_no_hours",
+      "pdf_url": null,
+      "note": "PDF map shows boundary only; hours not on PDF \u2014 needs separate source"
+    },
+    "SB(n)": {
+      "osm_zone_tag": "SB(n)",
+      "pdf_stem": "SBn",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "CTN": {
+      "osm_zone_tag": "CTN",
+      "pdf_stem": "CTN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "WSE": {
+      "osm_zone_tag": "WSE",
+      "pdf_stem": "WSE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "CF": {
+      "osm_zone_tag": "CF",
+      "pdf_stem": "CF",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "WSN": {
+      "osm_zone_tag": "WSN",
+      "pdf_stem": "WSN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "LBR": {
+      "osm_zone_tag": "LBR",
+      "pdf_stem": "LBR",
+      "zone_name": "Lea Bridge Road",
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdf_read",
+      "pdf_url": null,
+      "note": null
+    },
+    "GGW": {
+      "osm_zone_tag": "GGW",
+      "pdf_stem": "GGW",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "GS": {
+      "osm_zone_tag": "GS",
+      "pdf_stem": "GS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "BP": {
+      "osm_zone_tag": "BP",
+      "pdf_stem": "BP",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "OL": {
+      "osm_zone_tag": "OL",
+      "pdf_stem": "OL",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "AM": {
+      "osm_zone_tag": "AM",
+      "pdf_stem": "AM",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "web_search",
+      "pdf_url": null,
+      "note": null
+    },
+    "BA": {
+      "osm_zone_tag": "BA",
+      "pdf_stem": "BA",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "LSW": {
+      "osm_zone_tag": "LSW",
+      "pdf_stem": "LSW",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "GGE": {
+      "osm_zone_tag": "GGE",
+      "pdf_stem": "GGE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "LH": {
+      "osm_zone_tag": "LH",
+      "pdf_stem": "LH",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "FSR": {
+      "osm_zone_tag": "FSR",
+      "pdf_stem": "FSR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "LNS": {
+      "osm_zone_tag": "LNS",
+      "pdf_stem": "LNS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "WSC": {
+      "osm_zone_tag": "WSC",
+      "pdf_stem": "WSC",
+      "zone_name": "Walthamstow Central",
+      "hours_osm_syntax": null,
+      "source": "pdf_has_no_hours",
+      "pdf_url": null,
+      "note": "PDF map shows boundary only; hours not on PDF \u2014 needs separate source"
+    },
+    "WSS": {
+      "osm_zone_tag": "WSS",
+      "pdf_stem": "WSS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr_400dpi",
+      "pdf_url": null,
+      "note": null
+    },
+    "QB": {
+      "osm_zone_tag": "QB",
+      "pdf_stem": "QB",
+      "zone_name": "Queen's Road Boundary Road",
+      "hours_osm_syntax": "Mo-Fr 08:00-12:30, 14:30-18:30; Sa 08:00-18:30",
+      "source": "pdf_read",
+      "pdf_url": null,
+      "note": null
+    },
+    "LNN": {
+      "osm_zone_tag": "LNN",
+      "pdf_stem": "LNN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "GM": {
+      "osm_zone_tag": "GM",
+      "pdf_stem": "GM",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "CHN": {
+      "osm_zone_tag": "CHN",
+      "pdf_stem": "CHN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "LPW": {
+      "osm_zone_tag": "LPW",
+      "pdf_stem": "LPW",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Su 08:00-21:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "HF": {
+      "osm_zone_tag": "HF",
+      "pdf_stem": "HF",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Su 08:00-21:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "HHE": {
+      "osm_zone_tag": "HHE",
+      "pdf_stem": "HHE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "MR": {
+      "osm_zone_tag": "MR",
+      "pdf_stem": "MR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr_400dpi",
+      "pdf_url": null,
+      "note": null
+    },
+    "LSN": {
+      "osm_zone_tag": "LSN",
+      "pdf_stem": "LSN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "SB(s)": {
+      "osm_zone_tag": "SB(s)",
+      "pdf_stem": "SBs",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "LPN": {
+      "osm_zone_tag": "LPN",
+      "pdf_stem": "LPN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-21:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "FRN": {
+      "osm_zone_tag": "FRN",
+      "pdf_stem": "FRN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "GGS": {
+      "osm_zone_tag": "GGS",
+      "pdf_stem": "GGS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "CTS": {
+      "osm_zone_tag": "CTS",
+      "pdf_stem": "CTS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "WA": {
+      "osm_zone_tag": "WA",
+      "pdf_stem": "WA",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "CML": {
+      "osm_zone_tag": "CML",
+      "pdf_stem": "CML",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "SJP": {
+      "osm_zone_tag": "SJP",
+      "pdf_stem": "SJP",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 08:00-18:30",
+      "source": "ocr_400dpi",
+      "pdf_url": null,
+      "note": null
+    },
+    "FR": {
+      "osm_zone_tag": "FR",
+      "pdf_stem": "FR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "HT": {
+      "osm_zone_tag": "HT",
+      "pdf_stem": "HT",
+      "zone_name": "Hilltop",
+      "hours_osm_syntax": null,
+      "source": "pdf_has_no_hours",
+      "pdf_url": null,
+      "note": "PDF map shows boundary only; hours not on PDF \u2014 needs separate source"
+    },
+    "CE": {
+      "osm_zone_tag": "CE",
+      "pdf_stem": "CE",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "HE": {
+      "osm_zone_tag": "HE",
+      "pdf_stem": "HE",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "ML": {
+      "osm_zone_tag": "ML",
+      "pdf_stem": "ML",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "HST": {
+      "osm_zone_tag": "HST",
+      "pdf_stem": "HST",
+      "zone_name": "High Street",
+      "hours_osm_syntax": null,
+      "source": "pdf_has_no_hours",
+      "pdf_url": null,
+      "note": "PDF map shows boundary only; hours not on PDF \u2014 needs separate source"
+    },
+    "BLN": {
+      "osm_zone_tag": "BLN",
+      "pdf_stem": "BLN",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "BWR": {
+      "osm_zone_tag": "BWR",
+      "pdf_stem": "BWR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "LNW": {
+      "osm_zone_tag": "LNW",
+      "pdf_stem": "LNW",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr_400dpi",
+      "pdf_url": null,
+      "note": null
+    },
+    "WXN": {
+      "osm_zone_tag": "WXN",
+      "pdf_stem": "WXN",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "LPE": {
+      "osm_zone_tag": "LPE",
+      "pdf_stem": "LPE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "LNE": {
+      "osm_zone_tag": "LNE",
+      "pdf_stem": "LNE",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "WS": {
+      "osm_zone_tag": "WS",
+      "pdf_stem": "WS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Su 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "BR": {
+      "osm_zone_tag": "BR",
+      "pdf_stem": "BR",
+      "zone_name": "Blackhorse Road",
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdf_read",
+      "pdf_url": null,
+      "note": null
+    },
+    "TS": {
+      "osm_zone_tag": "TS",
+      "pdf_stem": "TS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "GGN": {
+      "osm_zone_tag": "GGN",
+      "pdf_stem": "GGN",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "NC": {
+      "osm_zone_tag": "NC",
+      "pdf_stem": "NC",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-16:00",
+      "source": "ocr_400dpi",
+      "pdf_url": null,
+      "note": null
+    },
+    "HPS": {
+      "osm_zone_tag": "HPS",
+      "pdf_stem": "HPS",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "WR": {
+      "osm_zone_tag": "WR",
+      "pdf_stem": "WR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "LSS": {
+      "osm_zone_tag": "LSS",
+      "pdf_stem": "LSS",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Fr 10:00-14:00",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "WD": {
+      "osm_zone_tag": "WD",
+      "pdf_stem": "WD",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "SNW": {
+      "osm_zone_tag": "SNW",
+      "pdf_stem": "SNW",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "LS": {
+      "osm_zone_tag": "LS",
+      "pdf_stem": "LS",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "MD": {
+      "osm_zone_tag": "MD",
+      "pdf_stem": "MD",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "MC": {
+      "osm_zone_tag": "MC",
+      "pdf_stem": "MC",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "RC": {
+      "osm_zone_tag": "RC",
+      "pdf_stem": "RC",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Su 10:00-16:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "WXS(e)": {
+      "osm_zone_tag": "WXS(e)",
+      "pdf_stem": "WXSe",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Su 08:00-21:00",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "CL": {
+      "osm_zone_tag": "CL",
+      "pdf_stem": "CL",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "ocr",
+      "pdf_url": null,
+      "note": null
+    },
+    "LK": {
+      "osm_zone_tag": "LK",
+      "pdf_stem": "LK",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "Jacks Farm RPZ": {
+      "osm_zone_tag": "Jacks Farm RPZ",
+      "pdf_stem": "Jacks Farm RPZ",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "SR": {
+      "osm_zone_tag": "SR",
+      "pdf_stem": "SR",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "TU": {
+      "osm_zone_tag": "TU",
+      "pdf_stem": "TU",
+      "zone_name": "Tudor Road",
+      "hours_osm_syntax": "Mo-Su 07:30-22:30",
+      "source": "web_search",
+      "pdf_url": null,
+      "note": "7-day operation, no weekend free period"
+    },
+    "RA": {
+      "osm_zone_tag": "RA",
+      "pdf_stem": "RA",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "TR": {
+      "osm_zone_tag": "TR",
+      "pdf_stem": "TR",
+      "zone_name": null,
+      "hours_osm_syntax": "Mo-Sa 08:00-18:30",
+      "source": "pdftotext",
+      "pdf_url": null,
+      "note": null
+    },
+    "H-TD": {
+      "osm_zone_tag": "H-TD",
+      "pdf_stem": "H-TD",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "FGN": {
+      "osm_zone_tag": "FGN",
+      "pdf_stem": "FGN",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    },
+    "CG": {
+      "osm_zone_tag": "CG",
+      "pdf_stem": "CG",
+      "zone_name": null,
+      "hours_osm_syntax": null,
+      "source": "no_pdf_found",
+      "pdf_url": null,
+      "note": "No PDF discovered at standard URL patterns; needs manual sourcing"
+    }
+  }
+}

@@ -1,0 +1,289 @@
+{
+  "boroughs": [
+    {
+      "name": "Camden",
+      "total": 1682,
+      "any": 38,
+      "anyPct": "2.3%",
+      "posLane": 27,
+      "posLanePct": "1.6%",
+      "posCondition": 0,
+      "posConditionPct": "0.0%",
+      "restrictive": 0,
+      "restrictivePct": "0.0%",
+      "timeBased": 0,
+      "timeBasedPct": "0.0%",
+      "positiveOnly": 27,
+      "positiveOnlyPct": "1.6%",
+      "restrictiveOnly": 0,
+      "restrictiveOnlyPct": "0.0%",
+      "mixed": 0,
+      "mixedPct": "0.0%",
+      "untagged": 1644,
+      "untaggedPct": "97.7%"
+    },
+    {
+      "name": "Waltham Forest",
+      "total": 2910,
+      "any": 1821,
+      "anyPct": "62.6%",
+      "posLane": 204,
+      "posLanePct": "7.0%",
+      "posCondition": 0,
+      "posConditionPct": "0.0%",
+      "restrictive": 13,
+      "restrictivePct": "0.4%",
+      "timeBased": 3,
+      "timeBasedPct": "0.1%",
+      "positiveOnly": 192,
+      "positiveOnlyPct": "6.6%",
+      "restrictiveOnly": 1,
+      "restrictiveOnlyPct": "0.0%",
+      "mixed": 12,
+      "mixedPct": "0.4%",
+      "untagged": 1089,
+      "untaggedPct": "37.4%"
+    }
+  ],
+  "streets": [
+    {
+      "name": "Fyfield Road",
+      "borough": "Waltham Forest",
+      "file": "waltham_forest_residential.json",
+      "found": 5,
+      "segments": [
+        {
+          "wayId": 29705404,
+          "parkingTags": {
+            "parking:both:zone": "WSE"
+          },
+          "classify": {
+            "hasAnyParking": true,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 223964869,
+          "parkingTags": {
+            "parking:both:zone": "WSE"
+          },
+          "classify": {
+            "hasAnyParking": true,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 223964870,
+          "parkingTags": {
+            "parking:both:zone": "WSE"
+          },
+          "classify": {
+            "hasAnyParking": true,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 1442337487,
+          "parkingTags": {
+            "parking:both:zone": "WSE"
+          },
+          "classify": {
+            "hasAnyParking": true,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 1442337488,
+          "parkingTags": {
+            "parking:both:zone": "WSE"
+          },
+          "classify": {
+            "hasAnyParking": true,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Winsbeach",
+      "borough": "Waltham Forest",
+      "file": "waltham_forest_residential.json",
+      "found": 1,
+      "segments": [
+        {
+          "wayId": 29705333,
+          "parkingTags": {
+            "parking:both:zone": "WSE"
+          },
+          "classify": {
+            "hasAnyParking": true,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "St Augustine's Road",
+      "borough": "Camden",
+      "file": "camden_residential.json",
+      "found": 3,
+      "segments": [
+        {
+          "wayId": 26362794,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 539939480,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 808162807,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cantelowes Road",
+      "borough": "Camden",
+      "file": "camden_residential.json",
+      "found": 5,
+      "segments": [
+        {
+          "wayId": 2687294,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 4281287,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 17513366,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 636624669,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 1017677707,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rousden Street",
+      "borough": "Camden",
+      "file": "camden_residential.json",
+      "found": 3,
+      "segments": [
+        {
+          "wayId": 19202581,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 1363689488,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        },
+        {
+          "wayId": 1363689489,
+          "parkingTags": {},
+          "classify": {
+            "hasAnyParking": false,
+            "hasPositiveLane": false,
+            "hasPositiveCondition": false,
+            "hasRestrictiveCondition": false,
+            "timeIntervalPresent": false
+          }
+        }
+      ]
+    }
+  ]
+}

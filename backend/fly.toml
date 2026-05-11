@@ -1,0 +1,37 @@
+# Fly.io config for the ParkFree backend.
+# First deploy:  fly launch --no-deploy   (or `fly apps create parkfree-backend`)
+#   fly secrets set DATABASE_URL="postgres://...sslmode=require"   # Supabase / Neon
+#   fly deploy
+app = "parkfree-backend"
+primary_region = "lhr"   # London — close to TfL + the user
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  HOST = "0.0.0.0"
+  NODE_ENV = "production"
+  LOG_LEVEL = "info"
+  # PGSSL intentionally unset → SSL on (managed DBs require it).
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Solo use → let the machine sleep when idle and cold-start on request
+  # (~1–2 s for this tiny Node app — far faster than Render's free tier).
+  # Bump to 1 if the cold start ever annoys you on an impromptu drive.
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

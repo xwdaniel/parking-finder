@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "ParkFree",
+    "slug": "parkfree",
+    "scheme": "parkfree",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "platforms": ["ios"],
+    "ios": {
+      "bundleIdentifier": "com.parkfree.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["comgooglemaps"]
+      }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ParkFree uses your location to find free street parking near you. The app works without it — you can search any destination manually."
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:3000"
+    }
+  }
+}

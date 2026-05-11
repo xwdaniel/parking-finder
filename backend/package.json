@@ -1,0 +1,26 @@
+{
+  "name": "parkfree-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/ingestion/hours.test.ts src/ingestion/sources/camden-transform.test.ts src/ingestion/socrata.test.ts src/server.test.ts",
+    "ingest:camden": "tsx src/ingestion/sources/camden.ts",
+    "ingest:camden:prod": "node dist/ingestion/sources/camden.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
