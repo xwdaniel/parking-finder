@@ -388,6 +388,25 @@ Rejected: hiding adapter-less boroughs entirely (clean but means a trip just out
 
 ---
 
+## D27 — Mapbox tokens via `app.config.ts` ← gitignored `app/.env`; map degrades to a no-map fallback when absent (build-order step 8)
+
+**Trigger:** `@rnmapbox/maps` needs **two** tokens — a public `pk.*` access token used at runtime, and a *secret* `sk.*` token (scope `Downloads:Read`) the config plugin uses at prebuild to fetch the native SDK. `app.json` (static, committed) can't hold the secret one cleanly, and the brief's distribution model is "side-load via Xcode" (a prebuilt dev client), so the build path genuinely needs it.
+
+**Decision:** Keep `app.json` for the static config; add `app.config.ts` (dynamic config) that layers two env vars (Expo auto-loads `.env` before evaluating it) onto it:
+- `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` → `extra.mapboxAccessToken` → surfaced by `src/lib/env.ts` as `MAPBOX_ACCESS_TOKEN` / `HAS_MAPBOX` → `Mapbox.setAccessToken()` at module load. (It's a *public* token, so it inlines into the JS bundle — that's expected and fine.)
+- `MAPBOX_DOWNLOAD_TOKEN` → the `@rnmapbox/maps` config plugin's `RNMapboxMapsDownloadToken` (the plugin is only added when this is set). Not an `EXPO_PUBLIC_*` name, so it never reaches the JS bundle — build-time only. This is why `app/.env` is gitignored; `app/.env.example` documents both.
+- **No `app/.env` ⇒ `HAS_MAPBOX` is false ⇒ `MapResultsScreen` renders a no-map fallback** (destination + the time/mode/walk summary + the zone count from `GET /zones` + the borough warning banner + a short list of nearby free streets). Same graceful-degradation shape as the Apple-geocoder fallback (D26). The JS still bundles and typechecks without either token (CI-friendly); only producing the *native dev client* truly needs `MAPBOX_DOWNLOAD_TOKEN`.
+
+Also pinned `@rnmapbox/maps` to the `~10.1.x` line — `latest` (10.3.x) requires `react-native ≥ 0.79`, but Expo SDK 52 is on RN 0.76; `10.1.45` peers `react-native ≥ 0.59.9`. (`expo install` doesn't know `@rnmapbox/maps`, so it grabbed `latest` and failed — pinned by hand.)
+
+**Why:** Keeps the secret out of git and out of the shipped bundle, keeps `app.json` familiar, and keeps the rest of the app testable with zero Mapbox setup — consistent with how every other external dependency in this project is handled (D14 free Apple tier, D26 Google key optional, backend `TFL_APP_KEY` optional until step 10).
+
+**How to apply:** Step 8 = done. To enable the map: in your Mapbox account → Tokens, take the default public token and create a new secret token with *only* the `Downloads:Read` scope; put both in `app/.env` (`EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.…`, `MAPBOX_DOWNLOAD_TOKEN=sk.…`), then `npx expo prebuild --clean` + run via Xcode. The hatched-grey *area* tint for adapter-less boroughs (brief §4) stays deferred until such a borough is ingested *and* we have its boundary polygon to render — `/zones` only returns street geometry, so for now an adapter-less borough surfaces via per-zone grey styling + the warning banner (the safety-critical part).
+
+**Reconsider if:** `react-native-google-places-autocomplete`'s old transitive deps (the `npm audit` noise from step 7) ever matter, or if a future Expo SDK / RN bump lets us move to `@rnmapbox/maps` 10.3+/11 — re-pin then. If the no-map fallback turns out to be the common case in CI, consider making `MapResultsScreen` import the Mapbox components lazily so they're not in the bundle at all without a token.
+
+---
+
 ## Cross-cutting principle
 
 Many decisions trade scale-readiness for solo-readiness (D17 no tile server, D13 no crowdsource, D14 free Apple tier, D8 iOS only). This is intentional. Validate the **core hypothesis** — "the time-aware inclusion model + composite scoring beats my current parking-finding method" — before paying any complexity tax for users who don't exist yet. If the hypothesis fails, no amount of scale-readiness would save the project. If it succeeds, the scale-up decisions can be revisited with real evidence.
