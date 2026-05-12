@@ -1,5 +1,11 @@
 import 'dotenv/config';
 
+// London-only app. Pin the process timezone so CPZ `opening_hours` evaluation (which
+// reads local-time Date getters — see src/zones/opening-hours.ts) treats the user's
+// arrival time as London wall-clock time, regardless of the host's clock (Fly.io
+// machines run UTC). Idempotent: an explicit `TZ` in the environment still wins.
+process.env.TZ ??= 'Europe/London';
+
 function required(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing required environment variable: ${name}`);

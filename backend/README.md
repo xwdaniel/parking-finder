@@ -1,23 +1,35 @@
 # ParkFree — backend (Fastify + TypeScript + PostGIS)
 
-Step 2 of the build order in `../ParkFree_ClaudeCode_Brief.md` §10: server skeleton +
-database connection + health check, deployable to Fly.io. Routing logic (§5) and the data
-pipeline (§6) land in later steps.
+Build order in `../ParkFree_ClaudeCode_Brief.md` §10: server skeleton + DB + health check
+(step 2), the CPZ/OSM data pipeline (steps 3–5, see `src/ingestion/README.md`), and the
+`GET /zones` time-aware query (step 6). TfL journey/transit routing (§5) lands in step 10.
 
 ## Layout
 
 ```
 backend/
   src/
-    server.ts            # Fastify app factory + listen; buildServer() is importable for tests
-    config.ts            # env parsing (DATABASE_URL, PORT, PGSSL, TFL_APP_KEY, …)
-    db/pool.ts           # shared pg Pool + checkDb()
-    routes/health.ts     # GET /health — DB connectivity + PostGIS presence
-  db/schema.sql          # cpz / zone / red_route DDL (brief §6.3–6.4) — apply manually for now
-  ingestion/             # steps 3–5 (see ingestion/README.md) — empty stub for now
-  Dockerfile  fly.toml   # Fly.io deploy
+    server.ts              # Fastify app factory + listen; buildServer() is importable for tests
+    config.ts              # env parsing (DATABASE_URL, PORT, PGSSL, TFL_APP_KEY, …) + TZ=Europe/London default
+    db/pool.ts             # shared pg Pool + checkDb();  db/{migrate,reset,status}.ts
+    routes/health.ts       # GET /health — DB connectivity + PostGIS presence
+    routes/zones.ts        # GET /zones?bbox=&t= — viewport-clipped GeoJSON, time-aware inclusion (brief §6.2)
+    zones/inclusion.ts     # pure: per-zone { eligible, confidence, reason } from a query-time snapshot (§6.2/§6.5)
+    zones/opening-hours.ts # `opening_hours.js` wrapper — is a CPZ operational at time T?
+    ingestion/             # steps 3–5: CPZ adapters + OSM zone ingestion (see ingestion/README.md)
+  db/schema.sql            # cpz / cpz_bay / zone / cpz_area / red_route DDL (brief §6.3–6.4) — applied by `npm run db:migrate`
+  static-data/             # *.json (council CPZ hours) + *-cpz-polygons.geojson (Felt areas) — committed
+  Dockerfile  fly.toml     # Fly.io deploy
   .env.example
 ```
+
+## API
+
+| Route | |
+|---|---|
+| `GET /` | service banner |
+| `GET /health` | DB connectivity + PostGIS presence (used by Fly.io's health check) |
+| `GET /zones?bbox=minLon,minLat,maxLon,maxLat&t=<ISO8601>` | every `zone` overlapping the viewport bbox, as a GeoJSON `FeatureCollection`. Each feature carries time-aware `eligible` / `confidence` (0.4 / 0.6 / 0.8 / 1.0) / `reason`, plus `zoneUnknown` (verify-with-signage badge), `boroughHasAdapter` (false ⇒ 0.4-tier warning banner), `hours` (the governing CPZ hours when a single known one applies), `hoursSpread` (the borough's CPZ-hours spread, for the `in_cpz_area` case), `activeCpz` (set only when excluded by an operational CPZ) and `cpz[]` (matched zone codes). `t` defaults to now and is read as London wall-clock time. See brief §6.2 / §6.5. |
 
 ## Database setup
 
@@ -32,6 +44,7 @@ The project uses a **Supabase** (or **Neon**) free-tier Postgres+PostGIS as both
    { "status": "ok", "time": "…", "db": { "connected": true, "postgis": "3.4.2", "serverVersion": "16.4" } }
    ```
    `/health` returns **503** with `status:"degraded"` if PostGIS isn't enabled, `status:"down"` if the DB is unreachable.
+   Then e.g. `curl -s 'localhost:3000/zones?bbox=-0.142,51.544,-0.134,51.549&t=2026-05-12T21:00:00' | jq '.meta'` for a viewport's worth of time-aware zones (drop `&t=…` for "now").
 
 For production, `fly secrets set DATABASE_URL=…` (same string) and `fly deploy` (see below).
 
@@ -67,14 +80,19 @@ fly logs
 ## Tests
 
 Run with `npm test`. No database required — DB-dependent paths are exercised against a
-deliberately-unreachable address (`src/testEnv.ts`), and the ingest's SQL writes are left
-for integration testing once a PostGIS instance exists.
+deliberately-unreachable address (`src/testEnv.ts`), and the ingest's SQL writes / the
+`/zones` happy path are left for integration testing against a live DB (verified manually
+per build step — `db:status` shows what's loaded).
 
 | File | Covers |
 |---|---|
 | `src/server.test.ts` | `buildServer()` via `inject`: `/` banner, `/health` → 503 when DB down, CORS reflection, 404 |
+| `src/routes/zones.test.ts` | `GET /zones` — bbox/`t` validation (400s), and 500 when the DB is unreachable (query layer wired up) |
+| `src/zones/inclusion.test.ts` | `evaluateZone` — Red Route exclusion, active-CPZ exclusion, the 1.0 / 0.8 / 0.6 / 0.4 confidence tiers (§6.2/§6.5) |
+| `src/zones/opening-hours.test.ts` | `cpzActiveAt` / `parseOpeningHours` — weekday/weekend/night windows, split specs, unparseable → null, parse cache |
 | `src/ingestion/socrata.test.ts` | `fetchSocrataAll` — pagination (incl. exact-multiple), HTTP-error rejection, `X-App-Token`, `$select`/`$where`/`$order` |
 | `src/ingestion/hours.test.ts` | `parseTimeRanges`, `camdenHours`, `haringeyHours` — council hours → OSM `opening_hours` syntax |
 | `src/ingestion/static.test.ts` | `parseStaticDataFile` (validation), `staticZonesToCpzRecords`; + every committed `static-data/*.json` parses with plausible hours |
 | `src/ingestion/sources/camden-transform.test.ts` | `transformCamdenZones` (group by name, union polygons, derive hours), `transformCamdenBays` |
 | `src/ingestion/sources/cpz-areas.test.ts` | `featureCollectionToAreaRecords` (GeoJSON FC → area records, validation); + the committed `*-cpz-polygons.geojson` parse |
+| `src/ingestion/sources/osm-transform.test.ts` | `wayToZoneFeature` / `waysToFeatureCollection` — parking-attribute extraction (old + new OSM schemas), short-way drop |
