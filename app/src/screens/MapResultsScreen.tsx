@@ -17,7 +17,10 @@ export function MapResultsScreen({ route }: Props) {
       <Text style={styles.muted}>
         Time: {search.timeMode === 'now' ? 'Leave now' : `Arrive by ${search.arrivalTime ?? '—'}`}
       </Text>
-      <Text style={styles.muted}>Max walk: {search.maxWalkMinutes} min</Text>
+      <Text style={styles.muted}>
+        Max walk: {search.maxWalkMinutes} min{search.mode === 'walk' ? ' to destination' : ' to a station'}
+      </Text>
+      {search.mode === 'transit' ? <Text style={styles.muted}>Buses: {search.includeBus ? 'included' : 'excluded'}</Text> : null}
       <Text style={[styles.muted, styles.note]}>Map + bottom sheet wired in Steps 8–9.</Text>
     </View>
   );

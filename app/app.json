@@ -7,12 +7,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "platforms": ["ios"],
+    "platforms": [
+      "ios"
+    ],
     "ios": {
       "bundleIdentifier": "com.parkfree.app",
       "supportsTablet": false,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["comgooglemaps"]
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps"
+        ]
       }
     },
     "plugins": [
@@ -22,10 +26,13 @@
           "locationWhenInUsePermission": "ParkFree uses your location to find free street parking near you. The app works without it — you can search any destination manually."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      "expo-asset"
     ],
     "extra": {
-      "apiBaseUrl": "http://localhost:3000"
+      "apiBaseUrl": "http://localhost:3000",
+      "googlePlacesApiKey": ""
     }
   }
 }

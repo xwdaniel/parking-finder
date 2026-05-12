@@ -374,6 +374,20 @@ Rejected: hiding adapter-less boroughs entirely (clean but means a trip just out
 
 ---
 
+## D26 — Destination input: Google Places autocomplete *when a key is configured*, Apple's on-device geocoder otherwise (build-order step 7)
+
+**Trigger:** The brief names Google Places for destination autocomplete + geocoding (§2/§4), but a Google Places key needs a Google Cloud project with billing enabled — real setup friction for a solo MVP, and a hard blocker on the Search screen being testable until it's done.
+
+**Decision:** `components/DestinationInput.tsx` checks `app.json` `extra.googlePlacesApiKey` (surfaced via `src/lib/env.ts`). **Key present** → `react-native-google-places-autocomplete` (`country:gb`, `fetchDetails`). **Key absent** (the default committed state — the field is `""`) → fall back to Apple's on-device geocoder via `expo-location` (`geocodeAsync` + `reverseGeocodeAsync` for tidy labels, debounced ~350 ms), with a small "using Apple Maps search — add a Google Places key for richer suggestions" hint. Both paths emit the same `PlaceSuggestion` `{ id, label, latitude, longitude }`; the rest of the screen and `SearchParams` don't care which was used.
+
+**Why:** Keeps the screen fully functional and verifiable today with zero external-account setup, while honouring the brief's intent the moment a key is dropped in. Apple's geocoder is iOS-native, no key, and forward/reverse geocoding doesn't require the location permission (it's address↔coords translation, not device positioning) — so it's a clean, free baseline. The abstraction cost is one component with two branches.
+
+**How to apply:** Step 7 = done. To enable Google: create a Google Cloud project, enable the "Places API" (legacy — that's what the lib v2 uses), create an API key, restrict it to iOS, and set `extra.googlePlacesApiKey` in `app.json` (or a gitignored local config). No code change needed. If the legacy Places API is ever sunset, swap the lib for a thin wrapper over Places API (New) — same `PlaceSuggestion` contract, so nothing downstream changes.
+
+**Reconsider if:** Apple's geocoder proves too weak in real use (bad/missing matches on the destinations actually searched) → either commit to setting up a Google key, or add a third source (e.g. Nominatim) behind the same `searchPlaces*` interface.
+
+---
+
 ## Cross-cutting principle
 
 Many decisions trade scale-readiness for solo-readiness (D17 no tile server, D13 no crowdsource, D14 free Apple tier, D8 iOS only). This is intentional. Validate the **core hypothesis** — "the time-aware inclusion model + composite scoring beats my current parking-finding method" — before paying any complexity tax for users who don't exist yet. If the hypothesis fails, no amount of scale-readiness would save the project. If it succeeds, the scale-up decisions can be revisited with real evidence.
