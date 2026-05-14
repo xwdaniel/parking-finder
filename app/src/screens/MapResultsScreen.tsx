@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomSheet, { BottomSheetFlatList, BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetFlatList, BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 import Mapbox, { Camera, LineLayer, MapView, MarkerView, ShapeSource } from '@rnmapbox/maps';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -616,20 +616,75 @@ const TIER_BADGE: Record<'severe' | 'minor' | 'none', { color: string; bg: strin
   none: { color: '#1c1c1e', bg: '#eef6f9', label: 'Good service' },
 };
 
-const LEG_LABEL: Record<LegMode, string> = {
-  walking: '🚶 Walk',
-  tube: '🚇 Tube',
-  dlr: '🚈 DLR',
-  overground: '🚆 Overground',
-  'elizabeth-line': '🚄 Elizabeth line',
-  bus: '🚌 Bus',
-  other: '➡︎ Transit',
+// Official TfL line palette — used for line badges in the journey sub-view. Keys
+// match `leg.lineId` from the TfL Journey response ('northern', 'central', …),
+// fall through by leg.mode for non-tube transit, and finally to a neutral grey.
+const TFL_LINE_COLOR: Record<string, { bg: string; fg: string }> = {
+  bakerloo:               { bg: '#B36305', fg: '#fff' },
+  central:                { bg: '#E32017', fg: '#fff' },
+  circle:                 { bg: '#FFD300', fg: '#000' },
+  district:               { bg: '#00782A', fg: '#fff' },
+  'hammersmith-city':     { bg: '#F3A9BB', fg: '#000' },
+  jubilee:                { bg: '#A0A5A9', fg: '#000' },
+  metropolitan:           { bg: '#9B0056', fg: '#fff' },
+  northern:               { bg: '#000000', fg: '#fff' },
+  piccadilly:             { bg: '#003688', fg: '#fff' },
+  victoria:               { bg: '#0098D4', fg: '#fff' },
+  'waterloo-city':        { bg: '#95CDBA', fg: '#000' },
+  elizabeth:              { bg: '#6950A1', fg: '#fff' }, // TfL `id` for the Elizabeth line is 'elizabeth'
+  dlr:                    { bg: '#00A4A7', fg: '#fff' },
+  // Overground operators (TfL split the network in 2024 — each gets its own id).
+  liberty:                { bg: '#5D6061', fg: '#fff' },
+  lioness:                { bg: '#FAA61A', fg: '#000' },
+  mildmay:                { bg: '#0080A3', fg: '#fff' },
+  suffragette:            { bg: '#76B82A', fg: '#000' },
+  weaver:                 { bg: '#A45A2A', fg: '#fff' },
+  windrush:               { bg: '#DC241F', fg: '#fff' },
+  'london-overground':    { bg: '#EE7C0E', fg: '#fff' }, // pre-2024 / fallback
+};
+
+const MODE_FALLBACK_COLOR: Record<LegMode, { bg: string; fg: string }> = {
+  walking:           { bg: '#dadde0', fg: '#1c1c1e' },
+  tube:              { bg: '#8a8f94', fg: '#fff' },
+  dlr:               { bg: '#00A4A7', fg: '#fff' },
+  overground:        { bg: '#EE7C0E', fg: '#fff' },
+  'elizabeth-line':  { bg: '#6950A1', fg: '#fff' },
+  bus:               { bg: '#DC241F', fg: '#fff' },
+  other:             { bg: '#8a8f94', fg: '#fff' },
+};
+
+function lineSwatch(leg: JourneyLeg): { bg: string; fg: string } {
+  if (leg.lineId && TFL_LINE_COLOR[leg.lineId]) return TFL_LINE_COLOR[leg.lineId]!;
+  return MODE_FALLBACK_COLOR[leg.mode];
+}
+
+const MODE_ICON: Record<LegMode, string> = {
+  walking: '🚶',
+  tube: '🚇',
+  dlr: '🚈',
+  overground: '🚆',
+  'elizabeth-line': '🚄',
+  bus: '🚌',
+  other: '➡︎',
 };
 
 function formatMinutes(min: number): string {
   if (min < 1) return '<1 min';
   return `${Math.round(min)} min`;
 }
+
+function formatHHMM(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+const DISRUPTION_BADGE: Record<'severe' | 'minor' | 'suspended', { bg: string; fg: string; label: string }> = {
+  suspended: { bg: '#9c2b2b', fg: '#fff', label: 'Suspended' },
+  severe: { bg: '#c0392b', fg: '#fff', label: 'Severe delays' },
+  minor: { bg: '#fff5dd', fg: '#7a5d18', label: 'Minor delays' },
+};
 
 function TransitMapResults({ search }: { search: SearchParams }) {
   const dest: [number, number] = [search.destinationLng, search.destinationLat];
@@ -983,7 +1038,7 @@ function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: 
   const p = result.zone.properties;
   const t = tierOf(p);
   return (
-    <BottomSheetView style={styles.sheetContent}>
+    <BottomSheetScrollView style={styles.fill} contentContainerStyle={styles.sheetContent}>
       <View style={styles.detailHeader}>
         <Pressable onPress={onBack} hitSlop={8}>
           <Text style={styles.detailBack}>‹ Back to list</Text>
@@ -1000,12 +1055,6 @@ function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: 
         <Text style={styles.detailBadgeText}>{TIER_LABEL[t]}</Text>
       </View>
 
-      {result.disruption !== 'none' ? (
-        <View style={[styles.disruptBadge, { backgroundColor: TIER_BADGE[result.disruption].bg }]}>
-          <Text style={[styles.disruptBadgeText, { color: TIER_BADGE[result.disruption].color }]}>{TIER_BADGE[result.disruption].label}</Text>
-        </View>
-      ) : null}
-
       {p.zoneUnknown ? (
         <View style={styles.detailVerify}>
           <Text style={styles.detailVerifyText}>⚠ Hours not catalogued — verify with signage before leaving the car.</Text>
@@ -1020,19 +1069,7 @@ function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: 
         </View>
       ) : null}
 
-      <View style={styles.detailHours}>
-        <Text style={styles.detailHoursLabel}>Journey</Text>
-        <Text style={styles.detailHoursValue}>
-          🚗 Drive · 🚶 {formatMinutes(result.walkToStopMinutes)} to stop · transit {formatMinutes(result.transitMinutes)} ·
-          arrive {result.arrivalDateTime ? new Date(result.arrivalDateTime).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '?'}
-        </Text>
-        {result.legs.map((leg, i) => (
-          <Text key={i} style={styles.legLine}>
-            {LEG_LABEL[leg.mode]} · {formatMinutes(leg.durationMinutes)}
-            {leg.summary ? ` — ${leg.summary}` : ''}
-          </Text>
-        ))}
-      </View>
+      <JourneySummary result={result} />
 
       <Pressable
         style={styles.navButton}
@@ -1041,8 +1078,95 @@ function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: 
       >
         <Text style={styles.navButtonText}>Navigate · drive here</Text>
       </Pressable>
-      <Text style={styles.detailMuted}>Opens Google Maps (or Apple Maps if not installed). The walk-to-stop leg is on you.</Text>
-    </BottomSheetView>
+      <Text style={styles.detailMuted}>Opens Google Maps (or Apple Maps if not installed). The walk legs at each end are on you.</Text>
+    </BottomSheetScrollView>
+  );
+}
+
+// --- Journey summary sub-view (brief §4 #3 / build-order step 11) -----------------
+
+function JourneySummary({ result }: { result: TransitResult }) {
+  const startHHMM = formatHHMM(result.startDateTime);
+  const arrivalHHMM = formatHHMM(result.arrivalDateTime);
+  return (
+    <View style={styles.journey}>
+      <View style={styles.journeyHeader}>
+        <Text style={styles.journeyTitle}>Journey</Text>
+        {result.disruption !== 'none' ? (
+          <View style={[styles.journeyDisrupt, { backgroundColor: DISRUPTION_BADGE[result.disruption].bg }]}>
+            <Text style={[styles.journeyDisruptText, { color: DISRUPTION_BADGE[result.disruption].fg }]}>
+              {DISRUPTION_BADGE[result.disruption].label}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.journeyTimes}>
+        <View style={styles.journeyTimeBlock}>
+          <Text style={styles.journeyTimeLabel}>Park & start</Text>
+          <Text style={styles.journeyTimeValue}>{startHHMM ?? '—'}</Text>
+        </View>
+        <View style={styles.journeyDashLine} />
+        <View style={styles.journeyTimeBlock}>
+          <Text style={styles.journeyTimeLabel}>Arrive</Text>
+          <Text style={styles.journeyTimeValue}>{arrivalHHMM ?? '—'}</Text>
+        </View>
+        <View style={styles.journeyTimeBlock}>
+          <Text style={styles.journeyTimeLabel}>Total</Text>
+          <Text style={styles.journeyTimeValue}>{formatMinutes(result.totalMinutes)}</Text>
+        </View>
+      </View>
+
+      {/* Drive leg — not part of TfL's leg list, but the user's mental model starts at the car */}
+      <View style={styles.legRow}>
+        <View style={styles.legLeft}>
+          <Text style={styles.legIcon}>🚗</Text>
+        </View>
+        <View style={styles.legMain}>
+          <Text style={styles.legPrimary}>Drive to {result.zone.properties.streetName ?? 'parking spot'}</Text>
+          <Text style={styles.legSecondary}>Park, then walk to {result.stop.name}</Text>
+        </View>
+      </View>
+
+      {result.legs.map((leg, i) => (
+        <LegRow key={i} leg={leg} />
+      ))}
+    </View>
+  );
+}
+
+function LegRow({ leg }: { leg: JourneyLeg }) {
+  const showSwatch = leg.mode !== 'walking';
+  const sw = lineSwatch(leg);
+  return (
+    <View style={styles.legRow}>
+      <View style={styles.legLeft}>
+        <Text style={styles.legIcon}>{MODE_ICON[leg.mode]}</Text>
+        {showSwatch ? (
+          <View style={[styles.lineBadge, { backgroundColor: sw.bg }]}>
+            <Text style={[styles.lineBadgeText, { color: sw.fg }]} numberOfLines={1}>
+              {leg.lineName ?? leg.mode}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.legMain}>
+        <Text style={styles.legPrimary}>
+          {leg.summary || (leg.mode === 'walking' ? `Walk ${leg.toName ? `to ${leg.toName}` : ''}` : `${leg.lineName ?? 'Transit'}`)}
+        </Text>
+        <Text style={styles.legSecondary}>
+          {formatMinutes(leg.durationMinutes)}
+          {leg.fromName && leg.toName ? ` · ${leg.fromName} → ${leg.toName}` : ''}
+        </Text>
+        {leg.disruption !== 'none' && leg.mode !== 'walking' ? (
+          <View style={[styles.legDisrupt, { backgroundColor: DISRUPTION_BADGE[leg.disruption].bg }]}>
+            <Text style={[styles.legDisruptText, { color: DISRUPTION_BADGE[leg.disruption].fg }]}>
+              {DISRUPTION_BADGE[leg.disruption].label}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -1340,4 +1464,27 @@ const styles = StyleSheet.create({
   noMapItemText: { flex: 1 },
   noMapItemName: { fontSize: 15, color: '#1c1c1e' },
   noMapItemSub: { fontSize: 12, color: '#8a8f94' },
+
+  // Journey sub-view (build-order step 11, brief §4 #3)
+  journey: { backgroundColor: '#f6f7f8', borderRadius: 12, padding: 12, gap: 12 },
+  journeyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  journeyTitle: { fontSize: 12, fontWeight: '700', color: '#8a8f94', textTransform: 'uppercase', letterSpacing: 0.4 },
+  journeyDisrupt: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  journeyDisruptText: { fontSize: 11, fontWeight: '700' },
+  journeyTimes: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  journeyTimeBlock: { gap: 1 },
+  journeyTimeLabel: { fontSize: 11, color: '#8a8f94', textTransform: 'uppercase', letterSpacing: 0.4 },
+  journeyTimeValue: { fontSize: 17, fontWeight: '700', color: '#1c1c1e' },
+  journeyDashLine: { flex: 1, height: 1, borderStyle: 'dashed', borderTopWidth: 1, borderColor: '#c2c7cb', marginHorizontal: 2, marginTop: 14 },
+
+  legRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  legLeft: { width: 72, alignItems: 'flex-start', gap: 4 },
+  legIcon: { fontSize: 20 },
+  lineBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, alignSelf: 'flex-start', maxWidth: 70 },
+  lineBadgeText: { fontSize: 11, fontWeight: '700' },
+  legMain: { flex: 1, gap: 2 },
+  legPrimary: { fontSize: 14, fontWeight: '600', color: '#1c1c1e' },
+  legSecondary: { fontSize: 12, color: '#666' },
+  legDisrupt: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginTop: 4 },
+  legDisruptText: { fontSize: 11, fontWeight: '700' },
 });

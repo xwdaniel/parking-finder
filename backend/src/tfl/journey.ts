@@ -20,6 +20,8 @@ const CACHE_TTL_MS = 5 * 60_000; // 5 min — past that, recompute (TfL data fre
 
 interface RawTflMode { name?: string }
 interface RawTflPoint { commonName?: string; naptanId?: string }
+interface RawTflLineIdentifier { id?: string; name?: string }
+interface RawTflRouteOption { name?: string; lineIdentifier?: RawTflLineIdentifier }
 interface RawTflLeg {
   duration?: number;
   mode?: RawTflMode;
@@ -27,6 +29,7 @@ interface RawTflLeg {
   departurePoint?: RawTflPoint;
   arrivalPoint?: RawTflPoint;
   disruptions?: DisruptionLike[];
+  routeOptions?: RawTflRouteOption[];
 }
 interface RawTflJourney {
   startDateTime?: string;
@@ -53,6 +56,10 @@ export interface NormalLeg {
   fromName: string | null;
   toName: string | null;
   disruption: DisruptionTier;
+  /** Lowercase TfL line id when the leg is transit ('northern', 'elizabeth', 'dlr', …); null for walking legs. */
+  lineId: string | null;
+  /** Display name for the line ('Northern', 'Elizabeth line'); null for walking legs. */
+  lineName: string | null;
 }
 
 export interface NormalJourney {
@@ -158,6 +165,11 @@ function normalize(raw: RawTflJourneyResponse): NormalJourney | null {
   const legs: NormalLeg[] = rawLegs.map((l) => {
     const mode = classifyLegMode(l.mode?.name);
     const disruption = worstTier(l.disruptions ?? []);
+    // routeOptions[0].lineIdentifier carries the line slug/name for transit legs;
+    // walking legs have an empty routeOptions entry with no lineIdentifier (just `name: ''`).
+    const ro = l.routeOptions?.[0];
+    const lineId = ro?.lineIdentifier?.id ?? null;
+    const lineName = ro?.lineIdentifier?.name ?? (ro?.name && ro.name.length > 0 ? ro.name : null);
     return {
       mode,
       durationMinutes: typeof l.duration === 'number' ? l.duration : 0,
@@ -165,6 +177,8 @@ function normalize(raw: RawTflJourneyResponse): NormalJourney | null {
       fromName: l.departurePoint?.commonName ?? null,
       toName: l.arrivalPoint?.commonName ?? null,
       disruption,
+      lineId,
+      lineName,
     };
   });
   // First/last walking-leg minutes; transit = total - both walks.

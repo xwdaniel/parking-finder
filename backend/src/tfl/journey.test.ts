@@ -73,3 +73,27 @@ test('normalize: returns null when TfL gives no journeys', () => {
   assert.equal(normalize({ journeys: [] }), null);
   assert.equal(normalize({}), null);
 });
+
+test('normalize: extracts lineId + lineName from routeOptions for transit legs; walking legs get null', () => {
+  const j = normalize({
+    journeys: [
+      {
+        duration: 33,
+        legs: [
+          { mode: { name: 'walking' }, duration: 13, routeOptions: [{ name: '' }] },
+          {
+            mode: { name: 'tube' },
+            duration: 9,
+            routeOptions: [{ name: 'Northern', lineIdentifier: { id: 'northern', name: 'Northern' } }],
+          },
+          { mode: { name: 'walking' }, duration: 11 },
+        ],
+      },
+    ],
+  });
+  assert.equal(j?.legs[0]!.lineId, null);
+  assert.equal(j?.legs[0]!.lineName, null);
+  assert.equal(j?.legs[1]!.lineId, 'northern');
+  assert.equal(j?.legs[1]!.lineName, 'Northern');
+  assert.equal(j?.legs[2]!.lineId, null);
+});

@@ -130,6 +130,10 @@ export interface JourneyLeg {
   fromName: string | null;
   toName: string | null;
   disruption: DisruptionTier | 'suspended';
+  /** Lowercase TfL line id when this is a transit leg ('northern', 'elizabeth', 'dlr', …). Null for walking legs. */
+  lineId: string | null;
+  /** Display name ('Northern', 'Elizabeth line'). Null for walking legs. */
+  lineName: string | null;
 }
 
 export interface TflStopRef {
