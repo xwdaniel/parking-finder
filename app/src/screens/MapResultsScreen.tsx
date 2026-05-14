@@ -5,10 +5,11 @@ import BottomSheet, { BottomSheetFlatList, BottomSheetView } from '@gorhom/botto
 import Mapbox, { Camera, LineLayer, MapView, MarkerView, ShapeSource } from '@rnmapbox/maps';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { useTransitSearch } from '../hooks/useTransitSearch';
 import { useWalkSearch } from '../hooks/useWalkSearch';
 import { useZones } from '../hooks/useZones';
 import { HAS_MAPBOX, MAPBOX_ACCESS_TOKEN } from '../lib/env';
-import type { Bbox, WalkResult, ZoneFeature, ZoneProperties } from '../lib/api';
+import type { Bbox, DisruptionTier, JourneyLeg, LegMode, TransitResult, WalkResult, ZoneFeature, ZoneProperties } from '../lib/api';
 import type { ParkStackParamList, SearchParams } from '../navigation/types';
 
 if (HAS_MAPBOX && MAPBOX_ACCESS_TOKEN) {
@@ -105,7 +106,8 @@ export function MapResultsScreen({ route, navigation }: Props) {
     navigation.setOptions({ title: search.destinationLabel });
   }, [navigation, search.destinationLabel]);
 
-  return HAS_MAPBOX ? <MapResults search={search} /> : <NoMapResults search={search} />;
+  if (!HAS_MAPBOX) return <NoMapResults search={search} />;
+  return search.mode === 'transit' ? <TransitMapResults search={search} /> : <MapResults search={search} />;
 }
 
 // --- with Mapbox -----------------------------------------------------------------
@@ -604,27 +606,509 @@ function Dots({ n, tier }: { n: number; tier: Tier }) {
   );
 }
 
+// =================================================================================
+// Transit mode (brief §5.2, build-order step 10)
+// =================================================================================
+
+const TIER_BADGE: Record<'severe' | 'minor' | 'none', { color: string; bg: string; label: string }> = {
+  severe: { color: '#fff', bg: '#c0392b', label: '⚠ Severe delays' },
+  minor: { color: '#7a5d18', bg: '#fff5dd', label: 'Minor delays' },
+  none: { color: '#1c1c1e', bg: '#eef6f9', label: 'Good service' },
+};
+
+const LEG_LABEL: Record<LegMode, string> = {
+  walking: '🚶 Walk',
+  tube: '🚇 Tube',
+  dlr: '🚈 DLR',
+  overground: '🚆 Overground',
+  'elizabeth-line': '🚄 Elizabeth line',
+  bus: '🚌 Bus',
+  other: '➡︎ Transit',
+};
+
+function formatMinutes(min: number): string {
+  if (min < 1) return '<1 min';
+  return `${Math.round(min)} min`;
+}
+
+function TransitMapResults({ search }: { search: SearchParams }) {
+  const dest: [number, number] = [search.destinationLng, search.destinationLat];
+  const initial = useMemo(() => initialBbox(search), [search]);
+  const initialZoom = useMemo(() => Math.max(11, Math.min(16, Math.log2(280 / (initial[2] - initial[0])))), [initial]);
+
+  const [bbox, setBbox] = useState<Bbox>(initial);
+  const [tooWide, setTooWide] = useState(false);
+  const mapRef = useRef<MapView>(null);
+  const cameraRef = useRef<Camera>(null);
+
+  const onMapIdle = async () => {
+    try {
+      const b = await mapRef.current?.getVisibleBounds();
+      if (!b) return;
+      const [ne, sw] = b;
+      const next: Bbox = [sw[0], sw[1], ne[0], ne[1]];
+      const wide = next[2] - next[0] > MAX_BBOX_SPAN || next[3] - next[1] > MAX_BBOX_SPAN;
+      setTooWide(wide);
+      if (!wide) setBbox(next);
+    } catch {
+      /* transient — ignore */
+    }
+  };
+
+  const arrivalT = arrivalTimeOf(search);
+  // Map background — same time-aware viewport zones as walk mode (step 8)
+  const { data: zonesData, isFetching: zonesFetching, isError: zonesError, error: zonesErrorObj } = useZones(bbox, arrivalT, !tooWide);
+  const features = useMemo(() => zonesData?.features ?? [], [zonesData]);
+
+  // Transit-ranked top-10 — drives the sheet AND the highlighted overlay
+  const { data: transitData, isLoading: transitLoading, isError: transitError, error: transitErrorObj } = useTransitSearch({
+    destination: { lat: search.destinationLat, lng: search.destinationLng },
+    maxWalkMinutes: search.maxWalkMinutes,
+    timeMode: search.timeMode,
+    t: arrivalT,
+    includeBus: search.includeBus,
+  });
+  const results: TransitResult[] = transitData?.results ?? [];
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(() => results.find((r) => r.zone.properties.id === selectedId) ?? null, [results, selectedId]);
+  const sheetRef = useRef<BottomSheet>(null);
+
+  const baseShape = useMemo(
+    () => ({
+      type: 'FeatureCollection' as const,
+      features: features.map((f: ZoneFeature) => ({ ...f, properties: { ...f.properties, tier: tierOf(f.properties) } })),
+    }),
+    [features],
+  );
+  const rankedShape = useMemo(
+    () => ({
+      type: 'FeatureCollection' as const,
+      features: results.map((r) => ({ ...r.zone, properties: { ...r.zone.properties, tier: tierOf(r.zone.properties) } })),
+    }),
+    [results],
+  );
+  const selectedShape = useMemo(
+    () => (selected ? { type: 'FeatureCollection' as const, features: [selected.zone] } : { type: 'FeatureCollection' as const, features: [] }),
+    [selected],
+  );
+
+  const flyTo = useCallback((lat: number, lng: number) => {
+    cameraRef.current?.setCamera({
+      centerCoordinate: [lng, lat],
+      zoomLevel: 15,
+      animationMode: 'flyTo',
+      animationDuration: 600,
+    });
+  }, []);
+
+  const pickZone = useCallback(
+    (result: TransitResult) => {
+      setSelectedId(result.zone.properties.id);
+      flyTo(result.zonePoint.lat, result.zonePoint.lng);
+      sheetRef.current?.snapToIndex(SNAP_EXPANDED);
+    },
+    [flyTo],
+  );
+
+  const onZoneTap = useCallback(
+    (e: { features: Array<{ properties?: { id?: string } | null }> }) => {
+      const tappedId = e.features[0]?.properties?.id;
+      if (!tappedId) return;
+      const found = results.find((r) => r.zone.properties.id === tappedId);
+      if (found) pickZone(found);
+    },
+    [results, pickZone],
+  );
+
+  useEffect(() => {
+    if (selectedId && !results.some((r) => r.zone.properties.id === selectedId)) setSelectedId(null);
+  }, [results, selectedId]);
+
+  const adapterlessBoroughs = useMemo(
+    () => [...new Set(features.filter((f) => !f.properties.boroughHasAdapter).map((f) => f.properties.borough))],
+    [features],
+  );
+
+  const [snapIndex, setSnapIndex] = useState<number>(SNAP_MID);
+  const showDetail = snapIndex >= SNAP_EXPANDED && selected !== null;
+
+  return (
+    <View style={styles.fill}>
+      <MapView ref={mapRef} style={styles.fill} styleURL={Mapbox.StyleURL.Light} scaleBarEnabled={false} onMapIdle={onMapIdle}>
+        <Camera ref={cameraRef} defaultSettings={{ centerCoordinate: dest, zoomLevel: initialZoom }} animationMode="none" />
+
+        <ShapeSource id="zones" shape={baseShape}>
+          <LineLayer
+            id="zones-line"
+            style={{
+              lineColor: [
+                'match',
+                ['get', 'tier'],
+                'best', TIER_COLOR.best,
+                'good', TIER_COLOR.good,
+                'unknown', TIER_COLOR.unknown,
+                'low', TIER_COLOR.low,
+                'excluded', TIER_COLOR.excluded,
+                '#888888',
+              ],
+              lineWidth: ['match', ['get', 'tier'], 'excluded', 1.5, 'low', 2, 3],
+              lineOpacity: ['match', ['get', 'tier'], 'excluded', 0.35, 0.55],
+              lineCap: 'round',
+              lineJoin: 'round',
+            }}
+          />
+        </ShapeSource>
+
+        <ShapeSource id="ranked" shape={rankedShape} onPress={onZoneTap} hitbox={{ width: 18, height: 18 }}>
+          <LineLayer
+            id="ranked-line"
+            style={{
+              lineColor: [
+                'match',
+                ['get', 'tier'],
+                'best', TIER_COLOR.best,
+                'good', TIER_COLOR.good,
+                'unknown', TIER_COLOR.unknown,
+                'low', TIER_COLOR.low,
+                '#666',
+              ],
+              lineWidth: 6,
+              lineOpacity: 0.95,
+              lineCap: 'round',
+              lineJoin: 'round',
+            }}
+          />
+        </ShapeSource>
+
+        <ShapeSource id="selected" shape={selectedShape}>
+          <LineLayer id="selected-line" style={{ lineColor: '#0a3a5c', lineWidth: 10, lineOpacity: 0.35, lineCap: 'round', lineJoin: 'round' }} />
+        </ShapeSource>
+
+        {/* Walk-to-stop leg (dashed line from parking point to chosen TfL stop). */}
+        {selected ? (
+          <ShapeSource
+            id="walk-to-stop"
+            shape={{
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [selected.zonePoint.lng, selected.zonePoint.lat],
+                  [selected.stop.lng, selected.stop.lat],
+                ],
+              },
+            }}
+          >
+            <LineLayer id="walk-to-stop-line" style={{ lineColor: '#0a7ea4', lineWidth: 3, lineDasharray: [2, 2], lineCap: 'round' }} />
+          </ShapeSource>
+        ) : null}
+
+        {/* Parking-point marker for the selected zone */}
+        {selected ? (
+          <MarkerView coordinate={[selected.zonePoint.lng, selected.zonePoint.lat]} anchor={{ x: 0.5, y: 0.5 }}>
+            <View style={styles.walkPin}>
+              <View style={styles.walkPinInner} />
+            </View>
+          </MarkerView>
+        ) : null}
+
+        {/* TfL stop marker for the selected result */}
+        {selected ? (
+          <MarkerView coordinate={[selected.stop.lng, selected.stop.lat]} anchor={{ x: 0.5, y: 1 }}>
+            <View style={styles.stopPin}>
+              <Text style={styles.stopPinText}>T</Text>
+            </View>
+          </MarkerView>
+        ) : null}
+
+        <MarkerView coordinate={dest} anchor={{ x: 0.5, y: 1 }}>
+          <View style={styles.destPin}>
+            <View style={styles.destPinInner} />
+          </View>
+        </MarkerView>
+      </MapView>
+
+      <SafeAreaView edges={['top']} style={styles.topOverlay} pointerEvents="box-none">
+        {adapterlessBoroughs.length > 0 ? (
+          <View style={styles.warningBanner}>
+            <Text style={styles.warningText}>
+              ⚠ Limited data in {adapterlessBoroughs.join(', ')} — no parking-zone rules available here. Check every sign.
+            </Text>
+          </View>
+        ) : null}
+        <View style={styles.statusStrip}>
+          <Text style={styles.statusText} numberOfLines={1}>
+            {tooWide
+              ? 'Zoom in to see parking zones'
+              : zonesError
+                ? `Couldn’t load zones — ${(zonesErrorObj as Error)?.message ?? 'try again'}`
+                : `Park + ${search.includeBus ? 'Tube/Bus' : 'Tube'} · ${whenLabel(search)}`}
+          </Text>
+          {zonesFetching ? <ActivityIndicator size="small" /> : null}
+        </View>
+      </SafeAreaView>
+
+      <BottomSheet
+        ref={sheetRef}
+        index={SNAP_MID}
+        snapPoints={SNAP_POINTS}
+        onChange={setSnapIndex}
+        backgroundStyle={styles.sheetBg}
+        handleIndicatorStyle={styles.sheetHandle}
+      >
+        {showDetail ? (
+          <TransitDetailView result={selected} onBack={() => sheetRef.current?.snapToIndex(SNAP_MID)} />
+        ) : snapIndex === SNAP_COLLAPSED ? (
+          <TransitCollapsedView results={results} loading={transitLoading} error={transitError ? (transitErrorObj as Error)?.message : null} onPick={pickZone} search={search} />
+        ) : (
+          <TransitListView results={results} loading={transitLoading} error={transitError ? (transitErrorObj as Error)?.message : null} onPick={pickZone} search={search} />
+        )}
+      </BottomSheet>
+    </View>
+  );
+}
+
+function TransitSheetHeader({ search, count, loading }: { search: SearchParams; count: number; loading: boolean }) {
+  return (
+    <View style={styles.sheetHeader}>
+      <Text style={styles.sheetTitle} numberOfLines={1}>
+        {count > 0
+          ? `${count} Park + ${search.includeBus ? 'Tube/Bus' : 'Tube'} option${count === 1 ? '' : 's'}${loading ? ' · planning…' : ''}`
+          : loading
+            ? 'Planning transit routes…'
+            : `No transit routes ${whenLabel(search)}`}
+      </Text>
+    </View>
+  );
+}
+
+function TransitCollapsedView({
+  results,
+  loading,
+  error,
+  onPick,
+  search,
+}: {
+  results: TransitResult[];
+  loading: boolean;
+  error: string | null;
+  onPick: (r: TransitResult) => void;
+  search: SearchParams;
+}) {
+  const top = results.slice(0, 3);
+  return (
+    <BottomSheetView style={styles.sheetContent}>
+      <TransitSheetHeader search={search} count={results.length} loading={loading} />
+      {error ? (
+        <TransitErrorState error={error} />
+      ) : results.length === 0 && !loading ? (
+        <TransitEmptyState search={search} />
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsRow}>
+          {top.map((r, i) => (
+            <Pressable key={r.zone.properties.id} style={styles.card} onPress={() => onPick(r)} accessibilityRole="button">
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardRank}>#{i + 1}</Text>
+                <Dots n={dotsFor(r.zone.properties)} tier={tierOf(r.zone.properties)} />
+              </View>
+              <Text style={styles.cardName} numberOfLines={2}>
+                {r.zone.properties.streetName ?? '(unnamed street)'}
+              </Text>
+              <Text style={styles.cardWalk}>
+                {formatMinutes(r.totalMinutes)} total · via {r.stop.name.replace(/ (Underground|DLR|Overground|Rail|Station)/gi, '').trim()}
+              </Text>
+              {r.disruption !== 'none' ? <Text style={styles.cardDisr}>{TIER_BADGE[r.disruption].label}</Text> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+    </BottomSheetView>
+  );
+}
+
+function TransitListView({
+  results,
+  loading,
+  error,
+  onPick,
+  search,
+}: {
+  results: TransitResult[];
+  loading: boolean;
+  error: string | null;
+  onPick: (r: TransitResult) => void;
+  search: SearchParams;
+}) {
+  return (
+    <BottomSheetFlatList
+      data={results}
+      keyExtractor={(r) => r.zone.properties.id}
+      ListHeaderComponent={<TransitSheetHeader search={search} count={results.length} loading={loading} />}
+      ListEmptyComponent={
+        error ? <TransitErrorState error={error} /> : loading ? (
+          <View style={styles.sheetLoading}>
+            <ActivityIndicator />
+            <Text style={styles.sheetMuted}>Planning journeys — TfL can take a few seconds.</Text>
+          </View>
+        ) : (
+          <TransitEmptyState search={search} />
+        )
+      }
+      contentContainerStyle={styles.listContent}
+      renderItem={({ item, index }) => (
+        <Pressable style={styles.row} onPress={() => onPick(item)} accessibilityRole="button">
+          <Text style={styles.rowRank}>{index + 1}</Text>
+          <View style={styles.rowMain}>
+            <Text style={styles.rowName} numberOfLines={1}>
+              {item.zone.properties.streetName ?? '(unnamed street)'}
+            </Text>
+            <Text style={styles.rowSub} numberOfLines={1}>
+              via {item.stop.name.replace(/ (Underground|DLR|Overground|Rail|Station)/gi, '').trim()}
+              {item.disruption !== 'none' ? ` · ${TIER_BADGE[item.disruption].label}` : ''}
+            </Text>
+          </View>
+          <View style={styles.rowRight}>
+            <Text style={styles.rowWalk}>{formatMinutes(item.totalMinutes)}</Text>
+            <Dots n={dotsFor(item.zone.properties)} tier={tierOf(item.zone.properties)} />
+          </View>
+        </Pressable>
+      )}
+    />
+  );
+}
+
+function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: () => void }) {
+  const p = result.zone.properties;
+  const t = tierOf(p);
+  return (
+    <BottomSheetView style={styles.sheetContent}>
+      <View style={styles.detailHeader}>
+        <Pressable onPress={onBack} hitSlop={8}>
+          <Text style={styles.detailBack}>‹ Back to list</Text>
+        </Pressable>
+        <Dots n={dotsFor(p)} tier={t} />
+      </View>
+
+      <Text style={styles.detailName} numberOfLines={2}>{p.streetName ?? '(unnamed street)'}</Text>
+      <Text style={styles.detailMeta}>
+        {formatMinutes(result.totalMinutes)} total · via {result.stop.name}
+      </Text>
+
+      <View style={[styles.detailBadge, { backgroundColor: TIER_COLOR[t] }]}>
+        <Text style={styles.detailBadgeText}>{TIER_LABEL[t]}</Text>
+      </View>
+
+      {result.disruption !== 'none' ? (
+        <View style={[styles.disruptBadge, { backgroundColor: TIER_BADGE[result.disruption].bg }]}>
+          <Text style={[styles.disruptBadgeText, { color: TIER_BADGE[result.disruption].color }]}>{TIER_BADGE[result.disruption].label}</Text>
+        </View>
+      ) : null}
+
+      {p.zoneUnknown ? (
+        <View style={styles.detailVerify}>
+          <Text style={styles.detailVerifyText}>⚠ Hours not catalogued — verify with signage before leaving the car.</Text>
+        </View>
+      ) : null}
+
+      {p.hours ? (
+        <View style={styles.detailHours}>
+          <Text style={styles.detailHoursLabel}>Controlled-parking hours</Text>
+          <Text style={styles.detailHoursValue}>{p.hours}</Text>
+          <Text style={styles.detailMuted}>Free outside these hours.</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.detailHours}>
+        <Text style={styles.detailHoursLabel}>Journey</Text>
+        <Text style={styles.detailHoursValue}>
+          🚗 Drive · 🚶 {formatMinutes(result.walkToStopMinutes)} to stop · transit {formatMinutes(result.transitMinutes)} ·
+          arrive {result.arrivalDateTime ? new Date(result.arrivalDateTime).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '?'}
+        </Text>
+        {result.legs.map((leg, i) => (
+          <Text key={i} style={styles.legLine}>
+            {LEG_LABEL[leg.mode]} · {formatMinutes(leg.durationMinutes)}
+            {leg.summary ? ` — ${leg.summary}` : ''}
+          </Text>
+        ))}
+      </View>
+
+      <Pressable
+        style={styles.navButton}
+        onPress={() => void navigateTo(result.zonePoint.lat, result.zonePoint.lng)}
+        accessibilityRole="button"
+      >
+        <Text style={styles.navButtonText}>Navigate · drive here</Text>
+      </Pressable>
+      <Text style={styles.detailMuted}>Opens Google Maps (or Apple Maps if not installed). The walk-to-stop leg is on you.</Text>
+    </BottomSheetView>
+  );
+}
+
+function TransitEmptyState({ search }: { search: SearchParams }) {
+  return (
+    <View style={styles.empty}>
+      <Text style={styles.emptyTitle}>No Park + Tube options {whenLabel(search)}.</Text>
+      <Text style={styles.emptyHint}>
+        Try widening the walk slider, switching to Park near, or arriving outside CPZ hours.
+      </Text>
+    </View>
+  );
+}
+
+function TransitErrorState({ error }: { error: string }) {
+  // The 503 (TFL_APP_KEY missing) case is by far the most likely failure on a dev build.
+  const isKeyMissing = /TFL_APP_KEY/i.test(error);
+  return (
+    <View style={styles.empty}>
+      <Text style={styles.sheetError}>
+        {isKeyMissing
+          ? 'Transit mode needs a TfL key. Add TFL_APP_KEY to backend/.env (see .env.example) and restart the server.'
+          : `Couldn’t plan journeys: ${error}`}
+      </Text>
+    </View>
+  );
+}
+
 // --- without Mapbox (no token configured) ----------------------------------------
 
 function NoMapResults({ search }: { search: SearchParams }) {
   const arrivalT = arrivalTimeOf(search);
   const bbox = useMemo(() => initialBbox(search), [search]);
   const { data: zonesData } = useZones(bbox, arrivalT);
-  const { data: walkData, isLoading, isError, error } = useWalkSearch(
+  const walkQ = useWalkSearch(
     { lat: search.destinationLat, lng: search.destinationLng },
     search.maxWalkMinutes,
     arrivalT,
+    search.mode === 'walk',
+  );
+  const transitQ = useTransitSearch(
+    {
+      destination: { lat: search.destinationLat, lng: search.destinationLng },
+      maxWalkMinutes: search.maxWalkMinutes,
+      timeMode: search.timeMode,
+      t: arrivalT,
+      includeBus: search.includeBus,
+    },
+    search.mode === 'transit',
   );
   const features = zonesData?.features ?? [];
   const adapterlessBoroughs = [...new Set(features.filter((f) => !f.properties.boroughHasAdapter).map((f) => f.properties.borough))];
-  const results = walkData?.results ?? [];
+
+  const isTransit = search.mode === 'transit';
+  const isLoading = isTransit ? transitQ.isLoading : walkQ.isLoading;
+  const isError = isTransit ? transitQ.isError : walkQ.isError;
+  const error = isTransit ? (transitQ.error as Error | undefined) : (walkQ.error as Error | undefined);
+  const walkResults = walkQ.data?.results ?? [];
+  const transitResults = transitQ.data?.results ?? [];
 
   return (
     <SafeAreaView style={styles.fill} edges={['bottom']}>
       <View style={styles.noMapBody}>
         <Text style={styles.noMapTitle}>{search.destinationLabel}</Text>
         <Text style={styles.noMapMeta}>
-          {search.mode === 'walk' ? 'Park near' : 'Park + Tube'} · arrive {whenLabel(search)} · {search.maxWalkMinutes} min walk
+          {isTransit ? `Park + ${search.includeBus ? 'Tube/Bus' : 'Tube'}` : 'Park near'} · arrive {whenLabel(search)} · {search.maxWalkMinutes} min walk
         </Text>
         <Text style={styles.noMapHint}>Add a Mapbox token in app/.env (see app/.env.example) to show the map.</Text>
 
@@ -639,18 +1123,54 @@ function NoMapResults({ search }: { search: SearchParams }) {
         {isLoading ? (
           <View style={styles.noMapState}>
             <ActivityIndicator />
-            <Text style={styles.noMapMeta}>Ranking nearby streets…</Text>
+            <Text style={styles.noMapMeta}>{isTransit ? 'Planning transit routes…' : 'Ranking nearby streets…'}</Text>
           </View>
         ) : isError ? (
-          <Text style={styles.noMapError}>Couldn’t rank parking: {(error as Error)?.message ?? 'unknown error'}</Text>
-        ) : results.length === 0 ? (
+          <Text style={styles.noMapError}>
+            {isTransit && /TFL_APP_KEY/i.test(error?.message ?? '')
+              ? 'Transit mode needs a TfL key. Add TFL_APP_KEY to backend/.env (see .env.example) and restart the server.'
+              : `Couldn’t ${isTransit ? 'plan journeys' : 'rank parking'}: ${error?.message ?? 'unknown error'}`}
+          </Text>
+        ) : isTransit ? (
+          transitResults.length === 0 ? (
+            <View style={styles.noMapState}>
+              <Text style={styles.noMapMeta}>No Park + Tube options {whenLabel(search)}.</Text>
+              <Text style={styles.noMapHint}>Try widening the walk slider or arriving outside CPZ hours.</Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.noMapList} contentContainerStyle={styles.noMapListContent}>
+              {transitResults.map((r, i) => {
+                const p = r.zone.properties;
+                const t = tierOf(p);
+                return (
+                  <Pressable
+                    key={p.id}
+                    style={styles.noMapItem}
+                    onPress={() => void navigateTo(r.zonePoint.lat, r.zonePoint.lng)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.noMapRank}>{i + 1}</Text>
+                    <View style={[styles.legendDot, { backgroundColor: TIER_COLOR[t] }]} />
+                    <View style={styles.noMapItemText}>
+                      <Text style={styles.noMapItemName}>{p.streetName ?? '(unnamed street)'}</Text>
+                      <Text style={styles.noMapItemSub}>
+                        {formatMinutes(r.totalMinutes)} total · via {r.stop.name}
+                        {r.disruption !== 'none' ? ` · ${TIER_BADGE[r.disruption].label}` : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )
+        ) : walkResults.length === 0 ? (
           <View style={styles.noMapState}>
             <Text style={styles.noMapMeta}>No free parking within {search.maxWalkMinutes} min walk {whenLabel(search)}.</Text>
             <Text style={styles.noMapHint}>Try widening the walk slider.</Text>
           </View>
         ) : (
           <ScrollView style={styles.noMapList} contentContainerStyle={styles.noMapListContent}>
-            {results.map((r, i) => {
+            {walkResults.map((r, i) => {
               const p = r.zone.properties;
               const t = tierOf(p);
               return (
@@ -709,6 +1229,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   walkPinInner: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#0a3a5c' },
+
+  stopPin: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    borderRadius: 11,
+    backgroundColor: '#1c1c1e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  stopPinText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+
+  cardDisr: { fontSize: 12, fontWeight: '600', color: '#c0392b' },
+  disruptBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  disruptBadgeText: { fontSize: 12, fontWeight: '700' },
+  legLine: { fontSize: 13, color: '#1c1c1e' },
 
   topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 12, gap: 8 },
   warningBanner: { backgroundColor: '#fbeaea', borderColor: '#e0b4b4', borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },

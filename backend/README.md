@@ -1,9 +1,9 @@
 # ParkFree — backend (Fastify + TypeScript + PostGIS)
 
 Build order in `../ParkFree_ClaudeCode_Brief.md` §10: server skeleton + DB + health check
-(step 2), the CPZ/OSM data pipeline (steps 3–5, see `src/ingestion/README.md`), the
-`GET /zones` time-aware query (step 6), and the `GET /search/walk` ranked search (step 9).
-TfL journey/transit routing (§5.2) lands in step 10.
+(step 2), the CPZ/OSM/TfL-stop data pipeline (steps 3–5, 10, see `src/ingestion/README.md`),
+the `GET /zones` time-aware query (step 6), the `GET /search/walk` ranked search (step 9),
+and the `GET /search/transit` ranked Park+Tube search with TfL Journey integration (step 10).
 
 ## Layout
 
@@ -15,7 +15,9 @@ backend/
     db/pool.ts             # shared pg Pool + checkDb();  db/{migrate,reset,status}.ts
     routes/health.ts       # GET /health — DB connectivity + PostGIS presence
     routes/zones.ts        # GET /zones?bbox=&t= — viewport-clipped GeoJSON, time-aware inclusion (brief §6.2)
-    routes/search.ts       # GET /search/walk?lat=&lng=&maxWalkMinutes=&t= — ranked top-10 walk-mode results (§5.1)
+    routes/search.ts       # GET /search/walk (§5.1) + GET /search/transit (§5.2) — ranked top-10 results
+    tfl/journey.ts         # TfL /Journey/JourneyResults wrapper + in-memory LRU cache (§9) — see D29
+    tfl/disruption.ts      # pure: leg-disruption → tier (suspended | severe | minor | none, §5.4 / D12)
     zones/inclusion.ts     # pure: per-zone { eligible, confidence, reason } from a query-time snapshot (§6.2/§6.5)
     zones/opening-hours.ts # `opening_hours.js` wrapper — is a CPZ operational at time T?
     ingestion/             # steps 3–5: CPZ adapters + OSM zone ingestion (see ingestion/README.md)
@@ -33,6 +35,7 @@ backend/
 | `GET /health` | DB connectivity + PostGIS presence (used by Fly.io's health check) |
 | `GET /zones?bbox=minLon,minLat,maxLon,maxLat&t=<ISO8601>` | every `zone` overlapping the viewport bbox, as a GeoJSON `FeatureCollection`. Each feature carries time-aware `eligible` / `confidence` (0.4 / 0.6 / 0.8 / 1.0) / `reason`, plus `zoneUnknown` (verify-with-signage badge), `boroughHasAdapter` (false ⇒ 0.4-tier warning banner), `hours` (the governing CPZ hours when a single known one applies), `hoursSpread` (the borough's CPZ-hours spread, for the `in_cpz_area` case), `activeCpz` (set only when excluded by an operational CPZ) and `cpz[]` (matched zone codes). `t` defaults to now and is read as London wall-clock time. See brief §6.2 / §6.5. |
 | `GET /search/walk?lat=&lng=&maxWalkMinutes=&t=<ISO8601>` | ranked walk-mode candidates (brief §5.1): the top 10 *eligible* zones within `maxWalkMinutes * 80` metres of the destination, scored `walkScore*0.7 + confidence*0.3` (D5/D28). Each result wraps the same zone feature shape as `/zones` plus `walkPoint:{lat,lng}` (the `ST_ClosestPoint` on the zone closest to the destination) and `walkMinutes` (the great-circle distance to that point, divided by 80). Empty list ⇒ no eligible zones in radius — the UI suggests widening the slider (never silently expand, D3). |
+| `GET /search/transit?lat=&lng=&maxWalkMinutes=&t=&timeMode=now\|arrive_by&includeBus=1\|0` | ranked Park+Tube candidates (brief §5.2 / D29): eligible zones within 1.5 km of destination, K=3 nearest TfL stops per zone (from `tfl_stop` — see `ingest:tfl-stops`), parallel `/Journey/JourneyResults` calls per (zone, stop), scored `time*0.40 + walk*0.40 + confidence*0.20`, dedupe per zone, top 10. Disruption tiers per §5.4 / D12 (`suspended` filters the route, `severe` × 0.7, `minor`/none kept). `503` when `TFL_APP_KEY` is missing — the frontend's transit detail surfaces an actionable hint. |
 
 ## Database setup
 
@@ -78,7 +81,7 @@ fly logs
 | `npm run build:static-data` | regenerate `static-data/{waltham-forest,haringey,tower-hamlets}.json` (hours) |
 | `npm run fetch:felt-cpz` | download Felt 2024 CPZ-area polygons → `static-data/*-cpz-polygons.geojson` (~7 min) |
 | `npm run ingest:all` | load everything: CPZ adapters (camden, wf, haringey, tower-hamlets, cpz-areas) + OSM (`zone`) |
-| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` / `:cpz-areas` / `:osm` | run one ingest step (needs `DATABASE_URL`) |
+| `npm run ingest:camden` / `:wf` / `:haringey` / `:tower-hamlets` / `:cpz-areas` / `:osm` / `:tfl-stops` | run one ingest step (needs `DATABASE_URL`; `:tfl-stops` also hits TfL but doesn't require a key) |
 
 ## Tests
 
@@ -92,6 +95,10 @@ per build step — `db:status` shows what's loaded).
 | `src/server.test.ts` | `buildServer()` via `inject`: `/` banner, `/health` → 503 when DB down, CORS reflection, 404 |
 | `src/routes/zones.test.ts` | `GET /zones` — bbox/`t` validation (400s), and 500 when the DB is unreachable (query layer wired up) |
 | `src/routes/search.test.ts` | `GET /search/walk` — lat/lng/maxWalkMinutes/`t` validation (400s), and 500 when the DB is unreachable (query layer wired up) |
+| `src/routes/search-transit.test.ts` | `GET /search/transit` — TFL_APP_KEY-missing 503, query validation 400s, and 500 when the DB is unreachable |
+| `src/tfl/disruption.test.ts` | `classifyDisruption` / `worstTier` — three §5.4 tiers (`suspended` / `severe` / `minor`) from `category` + `description` text |
+| `src/tfl/journey.test.ts` | `_internals` — 50m coord snapping + 5-min time bucketing for the §9 cache key, and `normalize()` collapsing legs into walkToStop / transit / walkFromStop minutes |
+| `src/ingestion/sources/tfl-stops-transform.test.ts` | `projectStopPoint` / `projectStopPoints` — keep routed stations, dedupe by id, intersect modes with the routed-modes whitelist |
 | `src/zones/inclusion.test.ts` | `evaluateZone` — Red Route exclusion, active-CPZ exclusion, the 1.0 / 0.8 / 0.6 / 0.4 confidence tiers (§6.2/§6.5) |
 | `src/zones/opening-hours.test.ts` | `cpzActiveAt` / `parseOpeningHours` — weekday/weekend/night windows, split specs, unparseable → null, parse cache |
 | `src/ingestion/socrata.test.ts` | `fetchSocrataAll` — pagination (incl. exact-multiple), HTTP-error rejection, `X-App-Token`, `$select`/`$where`/`$order` |

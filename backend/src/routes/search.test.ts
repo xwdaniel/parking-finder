@@ -34,7 +34,7 @@ test('GET /search/walk with non-numeric coords → 400', () =>
   withServer(async (app) => {
     const res = await app.inject({ method: 'GET', url: '/search/walk?lat=foo&lng=bar&maxWalkMinutes=10' });
     assert.equal(res.statusCode, 400);
-    assert.match((res.json() as { error: string }).error, /must be numbers/);
+    assert.match((res.json() as { error: string }).error, /must be a number/);
   }));
 
 test('GET /search/walk with out-of-range lat/lng → 400', () =>

@@ -5,7 +5,7 @@
 
 import { pool, checkDb } from './pool';
 
-const TABLES = ['cpz', 'cpz_bay', 'cpz_area', 'zone', 'red_route'] as const;
+const TABLES = ['cpz', 'cpz_bay', 'cpz_area', 'zone', 'red_route', 'tfl_stop'] as const;
 
 async function tableCount(name: string): Promise<number | null> {
   try {

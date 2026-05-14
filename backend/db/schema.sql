@@ -84,3 +84,19 @@ create table if not exists red_route (
   last_synced_at  timestamptz not null default now()
 );
 create index if not exists red_route_geom_gist on red_route using gist (geom);
+
+-- --- TfL StopPoints (build-order step 10, brief §5.2) --------------------------
+-- Tube / Overground / DLR / Elizabeth-line stations. Used to pick K=3 nearest
+-- stops per candidate parking zone — the *zonePoint* is then ST_ClosestPoint
+-- on the zone toward each stop, biasing the chosen end of the street toward
+-- the walk-leg the user will actually take. The TfL Journey API still receives
+-- coordinates (never stop IDs — D-Canary-Wharf-two-stations / §9). Refreshed
+-- weekly by `npm run ingest:tfl-stops`.
+create table if not exists tfl_stop (
+  id              text primary key,                  -- naptanId, e.g. '940GZZLUCND'
+  name            text not null,                     -- 'Camden Town Underground Station'
+  modes           text[] not null,                   -- {'tube','overground','dlr','elizabeth-line', ...}
+  geom            geometry(Point, 4326) not null,
+  last_synced_at  timestamptz not null default now()
+);
+create index if not exists tfl_stop_geom_gist on tfl_stop using gist (geom);

@@ -117,3 +117,86 @@ export async function fetchWalkSearch({ destination, maxWalkMinutes, t }: WalkSe
   }
   return (await res.json()) as WalkSearchResponse;
 }
+
+// --- GET /search/transit (brief §5.2, build-order step 10) ----------------------
+
+export type LegMode = 'walking' | 'tube' | 'dlr' | 'overground' | 'elizabeth-line' | 'bus' | 'other';
+export type DisruptionTier = 'severe' | 'minor' | 'none'; // 'suspended' is filtered server-side
+
+export interface JourneyLeg {
+  mode: LegMode;
+  durationMinutes: number;
+  summary: string;
+  fromName: string | null;
+  toName: string | null;
+  disruption: DisruptionTier | 'suspended';
+}
+
+export interface TflStopRef {
+  id: string;
+  name: string;
+  modes: string[];
+  lat: number;
+  lng: number;
+}
+
+export interface TransitResult {
+  zone: ZoneFeature;
+  /** Closest point on the zone toward the chosen TfL stop — where the user parks and starts walking. */
+  zonePoint: WalkPoint;
+  stop: TflStopRef;
+  walkToStopMinutes: number;
+  transitMinutes: number;
+  totalMinutes: number;
+  startDateTime: string | null;
+  arrivalDateTime: string | null;
+  disruption: DisruptionTier;
+  legs: JourneyLeg[];
+  score: number;
+}
+
+export interface TransitSearchResponse {
+  destination: WalkPoint;
+  t: string;
+  timeMode: 'now' | 'arrive_by';
+  includeBus: boolean;
+  maxWalkMinutes: number;
+  results: TransitResult[];
+  meta: { radiusMeters: number; eligibleZones: number; candidateZones: number; tflCallsMade: number; tflNetworkErrors: number };
+}
+
+export interface TransitSearchQuery {
+  destination: WalkPoint;
+  maxWalkMinutes: number;
+  /** 'now' ⇒ TfL timeIs=Departing + current time. 'arrive_by' ⇒ Arriving + t. */
+  timeMode: 'now' | 'arrive_by';
+  /** Required when timeMode='arrive_by'; ignored otherwise (server defaults to now). */
+  t?: string | null;
+  includeBus: boolean;
+}
+
+/** GET /search/transit — ranked Park+Tube candidates (top 10) with disruption-aware scoring. */
+export async function fetchTransitSearch(
+  { destination, maxWalkMinutes, timeMode, t, includeBus }: TransitSearchQuery,
+  signal?: AbortSignal,
+): Promise<TransitSearchResponse> {
+  const params = new URLSearchParams({
+    lat: String(destination.lat),
+    lng: String(destination.lng),
+    maxWalkMinutes: String(maxWalkMinutes),
+    timeMode,
+    includeBus: includeBus ? '1' : '0',
+  });
+  if (t) params.set('t', t);
+  const res = await fetch(`${API_BASE_URL}/search/transit?${params.toString()}`, { signal });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      detail = ((await res.json()) as { error?: string }).error ?? '';
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(`/search/transit ${res.status}${detail ? `: ${detail}` : ''}`);
+  }
+  return (await res.json()) as TransitSearchResponse;
+}

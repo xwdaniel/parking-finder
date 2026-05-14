@@ -24,9 +24,10 @@ export const config = {
   pgSslDisabled: process.env.PGSSL === 'disable',
 
   // TfL Unified API key — used from Step 10 (journey planning). Optional until then.
-  tflAppKey: process.env.TFL_APP_KEY ?? null,
+  // Read dynamically so a test can toggle TFL_APP_KEY between invocations.
+  get tflAppKey(): string | null { return process.env.TFL_APP_KEY ?? null; },
 
   // Socrata app token — optional; raises the anonymous rate limit on Camden's
   // open-data API (used by the Camden CPZ adapter, step 3).
   socrataAppToken: process.env.SOCRATA_APP_TOKEN ?? null,
-} as const;
+};
