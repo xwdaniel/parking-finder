@@ -66,3 +66,54 @@ export async function fetchZones({ bbox, t }: ZonesQuery, signal?: AbortSignal):
   }
   return (await res.json()) as ZonesResponse;
 }
+
+// --- GET /search/walk (brief §5.1, build-order step 9) --------------------------
+
+export interface WalkPoint {
+  lat: number;
+  lng: number;
+}
+
+/** One ranked candidate: the zone plus its closest point to the destination and the score components. */
+export interface WalkResult {
+  zone: ZoneFeature;
+  walkPoint: WalkPoint;
+  walkMinutes: number;
+  score: number; // not shown to the user — informs sort order only (D16)
+}
+
+export interface WalkSearchResponse {
+  destination: WalkPoint;
+  t: string;
+  maxWalkMinutes: number;
+  results: WalkResult[];
+  meta: { radiusMeters: number; candidatesConsidered: number; candidatesTruncated: boolean };
+}
+
+export interface WalkSearchQuery {
+  destination: WalkPoint;
+  maxWalkMinutes: number;
+  /** ISO-8601 arrival time; omit/null ⇒ backend uses "now". */
+  t?: string | null;
+}
+
+/** GET /search/walk — ranked walk-mode parking candidates (top 10) within the slider radius. */
+export async function fetchWalkSearch({ destination, maxWalkMinutes, t }: WalkSearchQuery, signal?: AbortSignal): Promise<WalkSearchResponse> {
+  const params = new URLSearchParams({
+    lat: String(destination.lat),
+    lng: String(destination.lng),
+    maxWalkMinutes: String(maxWalkMinutes),
+  });
+  if (t) params.set('t', t);
+  const res = await fetch(`${API_BASE_URL}/search/walk?${params.toString()}`, { signal });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      detail = ((await res.json()) as { error?: string }).error ?? '';
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(`/search/walk ${res.status}${detail ? `: ${detail}` : ''}`);
+  }
+  return (await res.json()) as WalkSearchResponse;
+}

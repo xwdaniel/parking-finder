@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 
 import { config } from './config';
 import { healthRoutes } from './routes/health';
+import { searchRoutes } from './routes/search';
 import { zoneRoutes } from './routes/zones';
 
 export function buildServer() {
@@ -16,6 +17,7 @@ export function buildServer() {
 
   void app.register(healthRoutes);
   void app.register(zoneRoutes);
+  void app.register(searchRoutes);
 
   app.get('/', async () => ({ name: 'parkfree-backend', version: '0.1.0', ok: true }));
 
