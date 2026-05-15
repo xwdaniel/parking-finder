@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSheet, { BottomSheetFlatList, BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 import Mapbox, { Camera, LineLayer, MapView, MarkerView, ShapeSource } from '@rnmapbox/maps';
@@ -9,6 +9,7 @@ import { useTransitSearch } from '../hooks/useTransitSearch';
 import { useWalkSearch } from '../hooks/useWalkSearch';
 import { useZones } from '../hooks/useZones';
 import { HAS_MAPBOX, MAPBOX_ACCESS_TOKEN } from '../lib/env';
+import { navigateTo } from '../lib/navigate';
 import type { Bbox, DisruptionTier, JourneyLeg, LegMode, TransitResult, WalkResult, ZoneFeature, ZoneProperties } from '../lib/api';
 import type { ParkStackParamList, SearchParams } from '../navigation/types';
 
@@ -80,21 +81,6 @@ function initialBbox(search: SearchParams): Bbox {
   const spanDeg = Math.min(MAX_BBOX_SPAN, Math.max(0.012, ((radiusM * 2) / 111_000) * 1.4));
   const half = spanDeg / 2;
   return [search.destinationLng - half, search.destinationLat - half, search.destinationLng + half, search.destinationLat + half];
-}
-
-/** Open Google Maps with a driving directions URL; fall back to Apple Maps if not installed (D15). */
-async function navigateTo(lat: number, lng: number): Promise<void> {
-  const google = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
-  const apple = `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
-  try {
-    const target = (await Linking.canOpenURL(google)) ? google : apple;
-    await Linking.openURL(target);
-  } catch {
-    // Last-resort: try Apple Maps directly.
-    await Linking.openURL(apple).catch(() => {
-      /* nothing we can do */
-    });
-  }
 }
 
 // =================================================================================
