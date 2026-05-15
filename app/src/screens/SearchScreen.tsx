@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -7,14 +7,14 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { DestinationInput } from '../components/DestinationInput';
 import { SegmentedToggle } from '../components/SegmentedToggle';
-import type { PlaceSuggestion } from '../lib/geocode';
+import { getCurrentLocationPlace, type CurrentLocationFailure, type PlaceSuggestion } from '../lib/geocode';
+import { DEFAULT_PREFS, loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
 import type { ParkStackParamList, SearchMode, SearchParams, TimeMode } from '../navigation/types';
 
 type Props = NativeStackScreenProps<ParkStackParamList, 'Search'>;
 
 const WALK_MIN = 2;
 const WALK_MAX = 30;
-const DEFAULT_WALK_MINUTES = 10; // brief §4
 
 /** Default "arrive by": the next whole hour. */
 function nextHour(): Date {
@@ -30,13 +30,41 @@ function formatArrival(d: Date): string {
 
 export function SearchScreen({ navigation }: Props) {
   const [place, setPlace] = useState<PlaceSuggestion | null>(null);
-  const [mode, setMode] = useState<SearchMode>('walk');
-  const [timeMode, setTimeMode] = useState<TimeMode>('now');
+  const [mode, setMode] = useState<SearchMode>(DEFAULT_PREFS.mode);
+  const [timeMode, setTimeMode] = useState<TimeMode>(DEFAULT_PREFS.timeMode);
   const [arrival, setArrival] = useState<Date>(nextHour);
-  const [maxWalkMinutes, setMaxWalkMinutes] = useState<number>(DEFAULT_WALK_MINUTES);
-  const [includeBus, setIncludeBus] = useState<boolean>(false);
+  const [maxWalkMinutes, setMaxWalkMinutes] = useState<number>(DEFAULT_PREFS.maxWalkMinutes);
+  const [includeBus, setIncludeBus] = useState<boolean>(DEFAULT_PREFS.includeBus);
+
+  // Load the user's last-trip prefs once. We hydrate state silently — no spinner,
+  // since the in-memory defaults match the disk defaults until loadPrefs resolves.
+  useEffect(() => {
+    let cancelled = false;
+    loadPrefs().then((p) => {
+      if (cancelled) return;
+      setMode(p.mode);
+      setTimeMode(p.timeMode);
+      setMaxWalkMinutes(p.maxWalkMinutes);
+      setIncludeBus(p.includeBus);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const canSubmit = place !== null;
+
+  // "Use my current location" button — graceful fallback when GPS is denied/off (brief §10 step 14).
+  const [locating, setLocating] = useState(false);
+  const [locFailure, setLocFailure] = useState<CurrentLocationFailure | null>(null);
+  const onUseCurrentLocation = async () => {
+    setLocFailure(null);
+    setLocating(true);
+    const r = await getCurrentLocationPlace();
+    setLocating(false);
+    if (r.ok) setPlace(r.place);
+    else setLocFailure(r.reason);
+  };
 
   const walkHint = useMemo(
     () => (mode === 'walk' ? 'from the parking spot to your destination' : 'from the parking spot to the nearest station'),
@@ -46,6 +74,8 @@ export function SearchScreen({ navigation }: Props) {
   const onSubmit = () => {
     if (!place) return;
     Keyboard.dismiss();
+    const nextPrefs: Prefs = { mode, timeMode, maxWalkMinutes, includeBus };
+    void savePrefs(nextPrefs); // fire-and-forget — never block navigation on disk write
     const search: SearchParams = {
       destinationLat: place.latitude,
       destinationLng: place.longitude,
@@ -74,7 +104,27 @@ export function SearchScreen({ navigation }: Props) {
             </Pressable>
           </View>
         ) : (
-          <DestinationInput onSelect={setPlace} />
+          <>
+            <DestinationInput onSelect={setPlace} />
+            <Pressable
+              style={styles.hereButton}
+              onPress={onUseCurrentLocation}
+              accessibilityRole="button"
+              disabled={locating}
+            >
+              {locating ? <ActivityIndicator size="small" /> : <Text style={styles.hereButtonIcon}>📍</Text>}
+              <Text style={styles.hereButtonText}>
+                {locating ? 'Finding your location…' : 'Use my current location'}
+              </Text>
+            </Pressable>
+            {locFailure ? (
+              <Text style={styles.locFailureHint}>
+                {locFailure === 'permission_denied'
+                  ? 'Location off — search a destination manually, or enable Location for ParkFree in Settings.'
+                  : 'Couldn’t find your location — search a destination manually.'}
+              </Text>
+            ) : null}
+          </>
         )}
       </View>
 
@@ -199,6 +249,23 @@ const styles = StyleSheet.create({
   pinIcon: { fontSize: 16 },
   pillLabel: { flex: 1, fontSize: 15, color: '#1c1c1e' },
   pillChange: { fontSize: 14, fontWeight: '600', color: '#0a7ea4' },
+
+  hereButton: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: '#f3f5f7',
+    borderWidth: 1,
+    borderColor: '#e0e3e6',
+  },
+  hereButtonIcon: { fontSize: 14 },
+  hereButtonText: { fontSize: 14, fontWeight: '600', color: '#0a7ea4' },
+  locFailureHint: { marginTop: 8, fontSize: 12, color: '#a05050', lineHeight: 17 },
 
   scroll: { flex: 1, zIndex: 0 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, gap: 20 },
