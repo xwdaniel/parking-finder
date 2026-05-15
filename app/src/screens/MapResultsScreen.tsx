@@ -4,11 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSheet, { BottomSheetFlatList, BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 import Mapbox, { Camera, LineLayer, MapView, MarkerView, ShapeSource } from '@rnmapbox/maps';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 
+import { OutcomePrompt } from '../components/OutcomePrompt';
+import { useOutcomes, usePendingPick, useInvalidateLog } from '../hooks/useOutcomes';
 import { useTransitSearch } from '../hooks/useTransitSearch';
 import { useWalkSearch } from '../hooks/useWalkSearch';
 import { useZones } from '../hooks/useZones';
 import { HAS_MAPBOX, MAPBOX_ACCESS_TOKEN } from '../lib/env';
+import { recordOutcome, recordPick, recordSearch } from '../lib/log/log';
+import { applyPersonalOverride, personalOverride, type PersonalOverride } from '../lib/log/personal';
+import type { LoggedCandidate, OutcomeKind, OutcomeRow } from '../lib/log/types';
 import { navigateTo } from '../lib/navigate';
 import type { Bbox, DisruptionTier, JourneyLeg, LegMode, TransitResult, WalkResult, ZoneFeature, ZoneProperties } from '../lib/api';
 import type { ParkStackParamList, SearchParams } from '../navigation/types';
@@ -83,6 +89,31 @@ function initialBbox(search: SearchParams): Bbox {
   return [search.destinationLng - half, search.destinationLat - half, search.destinationLng + half, search.destinationLat + half];
 }
 
+// --- personal-override helpers (brief §7 / D31) ----------------------------------
+
+/** Look up the personal-log override for a single zone id. Null when the user has no outcome on it. */
+function overrideFor(zoneId: string, outcomes: Map<string, OutcomeRow> | undefined): PersonalOverride | null {
+  if (!outcomes) return null;
+  const row = outcomes.get(zoneId);
+  return row ? personalOverride(row) : null;
+}
+
+/** Shape we project candidates to for `search.raw_results_json` — small, stable, decodable later. */
+function loggedCandidatesOf<T extends WalkResult | TransitResult>(
+  results: T[],
+  pick: (r: T, rank: number) => Omit<LoggedCandidate, 'zoneId' | 'streetName' | 'confidence' | 'reason' | 'rank' | 'score'>,
+): LoggedCandidate[] {
+  return results.slice(0, 10).map((r, i) => ({
+    rank: i + 1,
+    zoneId: r.zone.properties.id,
+    streetName: r.zone.properties.streetName,
+    confidence: r.zone.properties.confidence,
+    reason: r.zone.properties.reason,
+    score: r.score,
+    ...pick(r, i + 1),
+  }));
+}
+
 // =================================================================================
 
 export function MapResultsScreen({ route, navigation }: Props) {
@@ -131,7 +162,7 @@ function MapResults({ search }: { search: SearchParams }) {
 
   // Map background — the time-aware viewport zones (step 8)
   const { data: zonesData, isFetching: zonesFetching, isError: zonesError, error: zonesErrorObj } = useZones(bbox, arrivalT, !tooWide);
-  const features = useMemo(() => zonesData?.features ?? [], [zonesData]);
+  const rawFeatures = useMemo(() => zonesData?.features ?? [], [zonesData]);
 
   // Ranked top-10 candidates — the bottom-sheet list (step 9)
   const { data: walkData, isLoading: walkLoading, isError: walkError, error: walkErrorObj } = useWalkSearch(
@@ -139,7 +170,27 @@ function MapResults({ search }: { search: SearchParams }) {
     search.maxWalkMinutes,
     arrivalT,
   );
-  const results: WalkResult[] = walkData?.results ?? [];
+  const rawResults: WalkResult[] = walkData?.results ?? [];
+
+  // Personal-log overrides (brief §7 / D31) — adjust display props without re-ranking.
+  const { data: outcomes } = useOutcomes();
+  const features = useMemo<ZoneFeature[]>(
+    () =>
+      rawFeatures.map((f) => {
+        const ov = overrideFor(f.properties.id, outcomes);
+        return ov ? { ...f, properties: applyPersonalOverride(f.properties, ov) } : f;
+      }),
+    [rawFeatures, outcomes],
+  );
+  const results = useMemo(
+    () =>
+      rawResults.map((r) => {
+        const ov = overrideFor(r.zone.properties.id, outcomes);
+        const zone = ov ? { ...r.zone, properties: applyPersonalOverride(r.zone.properties, ov) } : r.zone;
+        return { ...r, zone, override: ov };
+      }),
+    [rawResults, outcomes],
+  );
 
   // Selection — the zone the user has picked, drives the highlight on the map and the expanded sheet
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -168,6 +219,65 @@ function MapResults({ search }: { search: SearchParams }) {
         : { type: 'FeatureCollection' as const, features: [] },
     [selected],
   );
+
+  // --- personal log — record search + pick + post-park prompt ---------------------
+  const invalidateLog = useInvalidateLog();
+  const searchIdRef = useRef<number | null>(null);
+  const loggedKeyRef = useRef<string | null>(null);
+  const searchKey = useMemo(
+    () => JSON.stringify([search.destinationLat, search.destinationLng, search.mode, search.timeMode, search.arrivalTime ?? null, search.maxWalkMinutes, search.includeBus]),
+    [search],
+  );
+  useEffect(() => {
+    if (!walkData) return;
+    if (loggedKeyRef.current === searchKey) return;
+    loggedKeyRef.current = searchKey;
+    searchIdRef.current = null;
+    const candidates = loggedCandidatesOf(rawResults, (r) => ({ walkMinutes: r.walkMinutes }));
+    recordSearch({ search, results: candidates })
+      .then((id) => {
+        searchIdRef.current = id;
+        invalidateLog();
+      })
+      .catch(() => {
+        /* writes are best-effort — never block the screen */
+      });
+  }, [walkData, rawResults, search, searchKey, invalidateLog]);
+
+  const handleNavigate = useCallback(
+    (zoneId: string, lat: number, lng: number) => {
+      const sid = searchIdRef.current;
+      if (sid !== null) {
+        recordPick(sid, zoneId).then(invalidateLog).catch(() => {});
+      }
+      void navigateTo(lat, lng);
+    },
+    [invalidateLog],
+  );
+
+  const { data: pending } = usePendingPick();
+  const [promptVisible, setPromptVisible] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (pending) setPromptVisible(true);
+    }, [pending]),
+  );
+  const submitOutcome = useCallback(
+    async (kind: OutcomeKind, hours?: string) => {
+      if (!pending) return setPromptVisible(false);
+      setPromptVisible(false);
+      try {
+        await recordOutcome({ zoneId: pending.zoneId, outcome: kind, hoursObserved: hours ?? null });
+      } finally {
+        invalidateLog();
+      }
+    },
+    [pending, invalidateLog],
+  );
+  const pendingStreetName = useMemo(() => {
+    if (!pending) return null;
+    return results.find((r) => r.zone.properties.id === pending.zoneId)?.zone.properties.streetName ?? null;
+  }, [pending, results]);
 
   // Centre the camera on the selected zone's walk-point when one is picked
   const flyToWalkPoint = useCallback((walkPoint: { lat: number; lng: number }) => {
@@ -369,7 +479,9 @@ function MapResults({ search }: { search: SearchParams }) {
         {showDetail ? (
           <DetailView
             result={selected}
+            override={selected.override}
             onBack={() => sheetRef.current?.snapToIndex(SNAP_MID)}
+            onNavigate={() => handleNavigate(selected.zone.properties.id, selected.walkPoint.lat, selected.walkPoint.lng)}
           />
         ) : snapIndex === SNAP_COLLAPSED ? (
           <CollapsedView
@@ -389,6 +501,14 @@ function MapResults({ search }: { search: SearchParams }) {
           />
         )}
       </BottomSheet>
+
+      <OutcomePrompt
+        visible={promptVisible && pending !== null && pending !== undefined}
+        streetName={pendingStreetName}
+        destinationLabel={pending?.destinationLabel ?? null}
+        onSubmit={submitOutcome}
+        onDismiss={() => setPromptVisible(false)}
+      />
     </View>
   );
 }
@@ -504,7 +624,17 @@ function ListView({
   );
 }
 
-function DetailView({ result, onBack }: { result: WalkResult; onBack: () => void }) {
+function DetailView({
+  result,
+  override,
+  onBack,
+  onNavigate,
+}: {
+  result: WalkResult;
+  override: PersonalOverride | null;
+  onBack: () => void;
+  onNavigate: () => void;
+}) {
   const p = result.zone.properties;
   const t = tierOf(p);
   return (
@@ -526,6 +656,19 @@ function DetailView({ result, onBack }: { result: WalkResult; onBack: () => void
       <View style={[styles.detailBadge, { backgroundColor: TIER_COLOR[t], opacity: t === 'excluded' ? 0.6 : 1 }]}>
         <Text style={styles.detailBadgeText}>{TIER_LABEL[t]}</Text>
       </View>
+
+      {override?.badge ? (
+        <View style={[styles.personalBadge, override.forceExcluded ? styles.personalBadgeNegative : styles.personalBadgePositive]}>
+          <Text style={styles.personalBadgeText}>{override.badge}</Text>
+        </View>
+      ) : null}
+
+      {override?.outcome.hoursObserved ? (
+        <View style={styles.detailHours}>
+          <Text style={styles.detailHoursLabel}>Hours you verified at the sign</Text>
+          <Text style={styles.detailHoursValue}>{override.outcome.hoursObserved}</Text>
+        </View>
+      ) : null}
 
       {p.zoneUnknown ? (
         <View style={styles.detailVerify}>
@@ -560,11 +703,7 @@ function DetailView({ result, onBack }: { result: WalkResult; onBack: () => void
         </View>
       ) : null}
 
-      <Pressable
-        style={styles.navButton}
-        onPress={() => void navigateTo(result.walkPoint.lat, result.walkPoint.lng)}
-        accessibilityRole="button"
-      >
+      <Pressable style={styles.navButton} onPress={onNavigate} accessibilityRole="button">
         <Text style={styles.navButtonText}>Navigate · drive here</Text>
       </Pressable>
       <Text style={styles.detailMuted}>Opens Google Maps (or Apple Maps if not installed). Walking leg from the spot is on you.</Text>
@@ -699,7 +838,7 @@ function TransitMapResults({ search }: { search: SearchParams }) {
   const arrivalT = arrivalTimeOf(search);
   // Map background — same time-aware viewport zones as walk mode (step 8)
   const { data: zonesData, isFetching: zonesFetching, isError: zonesError, error: zonesErrorObj } = useZones(bbox, arrivalT, !tooWide);
-  const features = useMemo(() => zonesData?.features ?? [], [zonesData]);
+  const rawFeatures = useMemo(() => zonesData?.features ?? [], [zonesData]);
 
   // Transit-ranked top-10 — drives the sheet AND the highlighted overlay
   const { data: transitData, isLoading: transitLoading, isError: transitError, error: transitErrorObj } = useTransitSearch({
@@ -709,7 +848,27 @@ function TransitMapResults({ search }: { search: SearchParams }) {
     t: arrivalT,
     includeBus: search.includeBus,
   });
-  const results: TransitResult[] = transitData?.results ?? [];
+  const rawResults: TransitResult[] = transitData?.results ?? [];
+
+  // Personal-log overrides (brief §7 / D31) — adjust display props without re-ranking.
+  const { data: outcomes } = useOutcomes();
+  const features = useMemo<ZoneFeature[]>(
+    () =>
+      rawFeatures.map((f) => {
+        const ov = overrideFor(f.properties.id, outcomes);
+        return ov ? { ...f, properties: applyPersonalOverride(f.properties, ov) } : f;
+      }),
+    [rawFeatures, outcomes],
+  );
+  const results = useMemo(
+    () =>
+      rawResults.map((r) => {
+        const ov = overrideFor(r.zone.properties.id, outcomes);
+        const zone = ov ? { ...r.zone, properties: applyPersonalOverride(r.zone.properties, ov) } : r.zone;
+        return { ...r, zone, override: ov };
+      }),
+    [rawResults, outcomes],
+  );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = useMemo(() => results.find((r) => r.zone.properties.id === selectedId) ?? null, [results, selectedId]);
@@ -770,6 +929,65 @@ function TransitMapResults({ search }: { search: SearchParams }) {
     () => [...new Set(features.filter((f) => !f.properties.boroughHasAdapter).map((f) => f.properties.borough))],
     [features],
   );
+
+  // --- personal log — record search + pick + post-park prompt ---------------------
+  const invalidateLog = useInvalidateLog();
+  const searchIdRef = useRef<number | null>(null);
+  const loggedKeyRef = useRef<string | null>(null);
+  const searchKey = useMemo(
+    () => JSON.stringify([search.destinationLat, search.destinationLng, search.mode, search.timeMode, search.arrivalTime ?? null, search.maxWalkMinutes, search.includeBus]),
+    [search],
+  );
+  useEffect(() => {
+    if (!transitData) return;
+    if (loggedKeyRef.current === searchKey) return;
+    loggedKeyRef.current = searchKey;
+    searchIdRef.current = null;
+    const candidates = loggedCandidatesOf(rawResults, (r) => ({ totalMinutes: r.totalMinutes, stopName: r.stop.name }));
+    recordSearch({ search, results: candidates })
+      .then((id) => {
+        searchIdRef.current = id;
+        invalidateLog();
+      })
+      .catch(() => {
+        /* best-effort */
+      });
+  }, [transitData, rawResults, search, searchKey, invalidateLog]);
+
+  const handleNavigate = useCallback(
+    (zoneId: string, lat: number, lng: number) => {
+      const sid = searchIdRef.current;
+      if (sid !== null) {
+        recordPick(sid, zoneId).then(invalidateLog).catch(() => {});
+      }
+      void navigateTo(lat, lng);
+    },
+    [invalidateLog],
+  );
+
+  const { data: pending } = usePendingPick();
+  const [promptVisible, setPromptVisible] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (pending) setPromptVisible(true);
+    }, [pending]),
+  );
+  const submitOutcome = useCallback(
+    async (kind: OutcomeKind, hours?: string) => {
+      if (!pending) return setPromptVisible(false);
+      setPromptVisible(false);
+      try {
+        await recordOutcome({ zoneId: pending.zoneId, outcome: kind, hoursObserved: hours ?? null });
+      } finally {
+        invalidateLog();
+      }
+    },
+    [pending, invalidateLog],
+  );
+  const pendingStreetName = useMemo(() => {
+    if (!pending) return null;
+    return results.find((r) => r.zone.properties.id === pending.zoneId)?.zone.properties.streetName ?? null;
+  }, [pending, results]);
 
   const [snapIndex, setSnapIndex] = useState<number>(SNAP_MID);
   const showDetail = snapIndex >= SNAP_EXPANDED && selected !== null;
@@ -900,13 +1118,26 @@ function TransitMapResults({ search }: { search: SearchParams }) {
         handleIndicatorStyle={styles.sheetHandle}
       >
         {showDetail ? (
-          <TransitDetailView result={selected} onBack={() => sheetRef.current?.snapToIndex(SNAP_MID)} />
+          <TransitDetailView
+            result={selected}
+            override={selected.override}
+            onBack={() => sheetRef.current?.snapToIndex(SNAP_MID)}
+            onNavigate={() => handleNavigate(selected.zone.properties.id, selected.zonePoint.lat, selected.zonePoint.lng)}
+          />
         ) : snapIndex === SNAP_COLLAPSED ? (
           <TransitCollapsedView results={results} loading={transitLoading} error={transitError ? (transitErrorObj as Error)?.message : null} onPick={pickZone} search={search} />
         ) : (
           <TransitListView results={results} loading={transitLoading} error={transitError ? (transitErrorObj as Error)?.message : null} onPick={pickZone} search={search} />
         )}
       </BottomSheet>
+
+      <OutcomePrompt
+        visible={promptVisible && pending !== null && pending !== undefined}
+        streetName={pendingStreetName}
+        destinationLabel={pending?.destinationLabel ?? null}
+        onSubmit={submitOutcome}
+        onDismiss={() => setPromptVisible(false)}
+      />
     </View>
   );
 }
@@ -1020,7 +1251,17 @@ function TransitListView({
   );
 }
 
-function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: () => void }) {
+function TransitDetailView({
+  result,
+  override,
+  onBack,
+  onNavigate,
+}: {
+  result: TransitResult;
+  override: PersonalOverride | null;
+  onBack: () => void;
+  onNavigate: () => void;
+}) {
   const p = result.zone.properties;
   const t = tierOf(p);
   return (
@@ -1041,6 +1282,19 @@ function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: 
         <Text style={styles.detailBadgeText}>{TIER_LABEL[t]}</Text>
       </View>
 
+      {override?.badge ? (
+        <View style={[styles.personalBadge, override.forceExcluded ? styles.personalBadgeNegative : styles.personalBadgePositive]}>
+          <Text style={styles.personalBadgeText}>{override.badge}</Text>
+        </View>
+      ) : null}
+
+      {override?.outcome.hoursObserved ? (
+        <View style={styles.detailHours}>
+          <Text style={styles.detailHoursLabel}>Hours you verified at the sign</Text>
+          <Text style={styles.detailHoursValue}>{override.outcome.hoursObserved}</Text>
+        </View>
+      ) : null}
+
       {p.zoneUnknown ? (
         <View style={styles.detailVerify}>
           <Text style={styles.detailVerifyText}>⚠ Hours not catalogued — verify with signage before leaving the car.</Text>
@@ -1057,11 +1311,7 @@ function TransitDetailView({ result, onBack }: { result: TransitResult; onBack: 
 
       <JourneySummary result={result} />
 
-      <Pressable
-        style={styles.navButton}
-        onPress={() => void navigateTo(result.zonePoint.lat, result.zonePoint.lng)}
-        accessibilityRole="button"
-      >
+      <Pressable style={styles.navButton} onPress={onNavigate} accessibilityRole="button">
         <Text style={styles.navButtonText}>Navigate · drive here</Text>
       </Pressable>
       <Text style={styles.detailMuted}>Opens Google Maps (or Apple Maps if not installed). The walk legs at each end are on you.</Text>
@@ -1420,6 +1670,10 @@ const styles = StyleSheet.create({
   detailMeta: { fontSize: 14, color: '#666' },
   detailBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   detailBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  personalBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
+  personalBadgePositive: { backgroundColor: '#eaf6ea', borderColor: '#9ccc9c' },
+  personalBadgeNegative: { backgroundColor: '#fdecec', borderColor: '#e0a0a0' },
+  personalBadgeText: { color: '#1a3d1a', fontSize: 12, fontWeight: '700' },
   detailVerify: { backgroundColor: '#fff5dd', borderColor: '#e8c97a', borderWidth: StyleSheet.hairlineWidth, padding: 10, borderRadius: 10 },
   detailVerifyText: { color: '#7a5d18', fontSize: 13 },
   detailHours: { gap: 2, backgroundColor: '#f6f7f8', padding: 10, borderRadius: 10 },
